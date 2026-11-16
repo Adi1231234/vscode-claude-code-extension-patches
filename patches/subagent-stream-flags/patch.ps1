@@ -10,12 +10,15 @@ function Invoke-Patch {
     $js = Read-Text $Ctx.Js
     if ($js -match '/\* SUBAGENTFLAGS \*/') { Write-Skip 'already patched'; return }
 
-    # Anchor on the pair of neighbouring keys rather than on one of them: either key
-    # alone appears again in the SDK client's initialize() payload.
-    $anchor = 'agentProgressSummaries:void 0,promptSuggestions:void 0'
-    if (-not $js.Contains($anchor)) { Write-Miss 'SDK query options anchor not found'; return }
+    # The key itself, pinned to the query options by the key that follows it:
+    # `agentProgressSummaries` alone appears again in the SDK client's initialize()
+    # payload. Only the key is matched - its neighbour's value is upstream's
+    # (promptSuggestions went from void 0 to !0 in 2.1.325, which is what broke the
+    # old anchor that spelled the pair out), so it is neither matched nor rewritten.
+    $m = [regex]::Matches($js, 'agentProgressSummaries:void 0(?=,promptSuggestions:)')
+    if ($m.Count -ne 1) { Write-Miss "SDK query options anchor matched $($m.Count) times, expected 1"; return }
 
     $flags = (Get-InjectedJs (Join-Path $PSScriptRoot 'js/flags.js')).Trim()
-    Write-Text $Ctx.Js ("/* SUBAGENTFLAGS */`n" + $js.Replace($anchor, $flags))
+    Write-Text $Ctx.Js ("/* SUBAGENTFLAGS */`n" + (Set-MatchText $js $m[0] $flags))
     Write-Ok 'subagent text + progress summaries forwarded'
 }
