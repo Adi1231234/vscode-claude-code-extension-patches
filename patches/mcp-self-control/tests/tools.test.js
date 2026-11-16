@@ -30,7 +30,7 @@ function setup(list, failOn) {
             s.error = undefined;
         }
     };
-    globalThis.__ccMcpTools(server, comms, "ch", zodString);
+    globalThis.__ccMcpTools(server, comms, "ch");
     const run = async (name, args) => {
         const r = await tools[name].fn(args);
         return { isError: !!r.isError, text: r.content[0].text, json: r.isError ? null : JSON.parse(r.content[0].text) };
@@ -47,6 +47,14 @@ const servers = () => [
 ];
 
 (async () => {
+    /* Before host/zod.js has run (or where the schema is gone): nothing is
+       registered and nothing throws - this runs inside the chat's launch. */
+    const none = {};
+    globalThis.__ccMcpTools({ registerTool: (n) => { none[n] = 1; } }, {}, "ch");
+    assert.deepStrictEqual(Object.keys(none), [], "no zod, no tools, no throw");
+    globalThis.__ccMcpTools({ registerTool: () => { throw new Error("schema refused"); } }, {}, "ch");
+    globalThis.__ccZodString = zodString;
+
     let t = setup(servers());
     assert.deepStrictEqual(Object.keys(t.tools).sort(), ["mcp_server_status", "reconnect_mcp_server"]);
     assert.strictEqual(t.tools.mcp_server_status.spec.annotations.readOnlyHint, true);
@@ -83,7 +91,7 @@ const servers = () => [
 
     const tools = {};
     globalThis.__ccMcpTools({ registerTool: (n, s, fn) => { tools[n] = fn; } },
-        { withChannel: async () => { throw new Error("Channel not found: gone"); } }, "gone", zodString);
+        { withChannel: async () => { throw new Error("Channel not found: gone"); } }, "gone");
     const gone = await tools.mcp_server_status({});
     assert.ok(gone.isError && gone.content[0].text.includes("gone"), "a closed chat answers an error, never throws");
 

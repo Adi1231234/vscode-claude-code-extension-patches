@@ -77,7 +77,7 @@ globalThis.__ccMcpTools = globalThis.__ccMcpTools || (function () {
         };
     }
 
-    return function register(server, comms, channel, string) {
+    function define(server, comms, channel, string) {
         server.registerTool("mcp_server_status", {
             description: "List every MCP server of this chat with its status (connected, failed, needs-auth, " +
                 "pending, disabled), its connection error and how many tools it has. Use it when an MCP tool " +
@@ -98,5 +98,18 @@ globalThis.__ccMcpTools = globalThis.__ccMcpTools || (function () {
             },
             annotations: { title: "Reconnect MCP server", readOnlyHint: false, destructiveHint: false, idempotentHint: true }
         }, guarded(function (args) { return reconnect(comms, channel, args.server); }));
+    }
+
+    /* `string` is the bundle's own z.string, left by host/zod.js at the app's
+       getDiagnostics schema - read there, where the name is in scope, never at
+       the launch, where a short minified name can be a different local. This
+       runs inside the chat's launch, so it never throws: without zod, or if
+       registering fails, the chat starts with the app's tools alone. */
+    return function register(server, comms, channel) {
+        var string = globalThis.__ccZodString;
+        if (typeof string !== "function") return;
+        try {
+            define(server, comms, channel, string);
+        } catch (e) {}
     };
 })();

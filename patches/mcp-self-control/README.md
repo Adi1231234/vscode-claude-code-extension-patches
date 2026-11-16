@@ -34,9 +34,19 @@ The extension builds an in-process MCP server, `claude-vscode`, for every chat
 it launches (`launchClaude` hands it to `registerVSCodeMcpServerTools`). That is
 where `getDiagnostics` comes from. The patch registers the two tools on that
 same server, right after the app's own. The anchor captures the chat's channel
-id and the server's parameter name from the launch. It also captures the zod
-string factory from the `getDiagnostics` schema, because `registerTool` takes a
-zod shape. The tools call the session's `mcpServerStatus()` and the extension's
+id and the server's parameter name from the launch.
+
+`registerTool` takes a zod shape, so the tools need the bundle's own
+`z.string`. They get it from the `getDiagnostics` schema, where the app calls
+it: that call becomes `(globalThis.__ccZodString = () => Z(), Z())`, and the
+app's own call is unchanged. It is read there and never passed from the launch.
+The zod name is minified per release (`qe` on 2.1.325, `n.string` on 2.1.306),
+and at the launch a short name like `n` can be one of `launchClaude`'s own
+parameters. The first version of this patch passed it from the launch and would
+have broken every chat on 2.1.306.
+
+Registering the tools never throws, because it runs inside the chat's launch:
+without zod, the chat starts with the app's tools alone. The tools call the session's `mcpServerStatus()` and the extension's
 own `reconnectMcpServer(channel, name)`. That sends the CLI the Agent SDK's
 `mcp_reconnect` request, the same call as the MCP dialog's Reconnect button.
 Nothing here opens a connection of its own.
@@ -59,9 +69,11 @@ for it.
     `reconnect_mcp_server` on it, got `connected` with one tool back, and
     called that tool. So the CLI serves `mcp_reconnect` while it waits on the
     result of the tool that sent it.
-- The patched call site resolves: `this` is `launchClaude`'s, the channel is its
-  first parameter, and the zod factory is declared at the top of the bundle
-  (checked with a parser).
+- `[ok]` and `node --check` on 2.1.294, 2.1.296, 2.1.301, 2.1.306, 2.1.319 and
+  2.1.325. Each anchor matches once in all of them.
+- A parser check on all six patched bundles: `this` at the call site is
+  `launchClaude`'s, and the channel name is bound by `launchClaude`'s first
+  parameter, with no nearer binding.
 
 ## Limits
 
