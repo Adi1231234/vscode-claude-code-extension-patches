@@ -52,14 +52,28 @@ trips it, which is the extension's own non-canonical spelling.
 
 ## What it does
 
-Wraps the `cwd` of every options object the extension uses to launch a claude
-process - the SDK query and the "Open Claude in Terminal" path - in
+Wraps the `cwd` of the SDK query every panel session is launched through in
 `__ccDriveCase`, which upper-cases a leading drive letter and passes anything
 else (UNC, POSIX, non-strings) through untouched.
 
-- Anchor, SDK query (required): `{cwd:<var>,resume:<id>,canUseTool:`
-- Anchor, terminal: `cwd:<arg>||this.cwd,`
+- Anchor: `{cwd:<expression>,resume:<id>,canUseTool:`. The two ends are
+  matched and the expression between them is captured, as long as it has no
+  comma or brace.
 - Guard: `/* CWDDRIVECASE */`
+
+## Dark again from 2.1.323 to 2.1.325
+
+The anchor captured the cwd as a single identifier (`{cwd:S,resume:...`).
+2.1.323 added a workspace-trust gate, and the value became an expression:
+`{cwd:T.viaProcessWrapper===!1&&w.kind==="trusted"?w.directory:b,resume:t,...`.
+Both branches still carry the lowercase drive. `b` is `path.resolve(this.cwd, ...)`,
+`this.cwd` comes from a plain `realpathSync` of the workspace `fsPath`, and the
+CLI's trust answer (`w.directory`) echoes back the cwd it was asked about. The
+new anchor matches once in every bundle from 2.1.296 to 2.1.325.
+
+The terminal site (`cwd:<arg>||this.cwd,`) is gone. It only fed the collaborator
+tmux terminal, whose request throws "not available on Windows", and a drive
+letter only exists on Windows.
 
 ## It was half-dark from 2.1.241 to 2.1.292
 

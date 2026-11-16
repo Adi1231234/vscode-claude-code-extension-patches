@@ -23,6 +23,16 @@ prompt queue (`patches/prompt-queue`). Sent alone it opens a menu of buttons;
    Since 2.1.300 the env is set inside the launch closure, an arrow function,
    so `this` is the same; the anchor matches the executable and the env and
    crosses what is between (one match on 2.1.296, 2.1.300 and 2.1.301).
+   `/queue` was dark from 2.1.318 to 2.1.325, for two reasons:
+   - The env anchor took `[^{};]+` up to the closing brace, but 2.1.318 put a
+     gated `{...}` spread inside the env object, so it never matched. One level
+     of nesting is allowed now.
+   - The `extraArgs:{` anchor matched 2 times in 2.1.322 and 3 times in 2.1.323,
+     because of the bundled SDK's own `query()` and a haiku suggestions helper.
+     It is now pinned to the chat spawn's object, the one that carries
+     `"replay-user-messages":null`.
+
+   Both match once in every bundle from 2.1.296 to 2.1.325.
    Both keys go in last and are always set, empty when there is nothing to
    give: a CLI inherits the environment of whatever started the editor, and an
    editor started from a CLI in a patched panel would otherwise answer every

@@ -69,10 +69,18 @@ function Invoke-Patch {
     # moved it into the launch closure (`;let v={},P=async(o,p)=>{O.env=`), an
     # arrow function, so `this` is still the comms object. What lies between is
     # crossed, not spelled out.
-    $js = Add-AfterOnly $js 'extraArgs:\{' (Read-Text (Join-Path $PSScriptRoot 'host/args.js')).Trim()
+    #
+    # extraArgs: since 2.1.322 the bundled SDK's query() builds an `extraArgs:{`
+    # of its own, and 2.1.323's prompt-suggestions helper a third. The chat
+    # spawn's is the one that carries "replay-user-messages" - patching another
+    # would load the mod into every SDK query, or into a throwaway haiku process.
+    # env: since 2.1.318 the object holds one nested object (a gated `{...}`
+    # spread), so one level of nesting is allowed; deeper, or a `;`, is a miss.
+    $rxArgs = 'extraArgs:\{(?=[^{}]*"replay-user-messages":null)'
+    $js = Add-AfterOnly $js $rxArgs (Read-Text (Join-Path $PSScriptRoot 'host/args.js')).Trim()
     if (-not $js) { Write-Miss 'CLI spawn extraArgs anchor not found exactly once'; return }
     $rxEnv = '([\w$]+)\.pathToClaudeCodeExecutable=[\w$]+,\1\.executableArgs=[\w$]+[,;][\s\S]{0,200}?' +
-             '\1\.env=\{[^{};]+(?=\})'
+             '\1\.env=\{(?:[^{};]|\{[^{};]*\})+(?=\})'
     $js = Add-AfterOnly $js $rxEnv (Read-Text (Join-Path $PSScriptRoot 'host/env.js')).Trim() '.pathToClaudeCodeExecutable='
     if (-not $js) { Write-Miss 'CLI spawn env anchor not found exactly once'; return }
     $js = Add-WebviewMessageHook $js (Join-Path $PSScriptRoot 'host/hook.js')
