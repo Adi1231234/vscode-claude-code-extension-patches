@@ -1,0 +1,19 @@
+__JSX__("div", {
+    id: "cc-cf",
+    className: "cc-cf cc-cf-hidden",
+    "data-cc": "",
+    children: [
+        __JSX__(__BUTTON__, {
+            key: "btn",
+            ariaLabel: "Files this chat created",
+            iconSize: 20,
+            onClick: function () { if (window.__ccCFOpen) window.__ccCFOpen(); },
+            children: __JSX__("span", {
+                className: "cc-cf-glyph",
+                style: { display: "block" },
+                dangerouslySetInnerHTML: { __html: window.__ccCFIcon() }
+            })
+        }),
+        __JSX__("span", { key: "badge", id: "cc-cf-badge", className: "cc-cf-badge cc-cf-empty" })
+    ]
+}),
