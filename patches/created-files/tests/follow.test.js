@@ -64,6 +64,23 @@ run({
     view.dispose();
   },
 
+  async 'a file deleted and made again in a moment stays listed, though read between the lines'() {
+    const file = touch('between', 'out.txt');
+    const add = (op, extra) => fs.appendFileSync(path.join(ledgerDir, 'between.jsonl'),
+      JSON.stringify(Object.assign({ t: new Date().toISOString(), op, path: file }, extra)) + '\r\n');
+    add('new', { verified: true, fid: '1' });
+    const { view } = await open('between');
+    fs.rmSync(file);
+    let next = view.next();
+    add('delete');
+    await next;   // read while the file is gone
+    touch('between', 'out.txt');
+    next = view.next();
+    add('rewrite', { fid: String(fs.statSync(file, { bigint: true }).ino) });
+    assert.deepStrictEqual((await next).files.map((f) => f.name), ['out.txt']);
+    view.dispose();
+  },
+
   async 'delete all waits until every file was looked at'() {
     const files = Array.from({ length: 900 }, (_, i) => touch('wait', `w${i}.txt`));
     ledger('wait', files);
