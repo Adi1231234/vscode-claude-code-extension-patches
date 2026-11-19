@@ -4,34 +4,19 @@
    <sessionId>.jsonl per chat under %LOCALAPPDATA%\claude-code-patches\
    created-files, plus a status.json. What is listed is narrow on purpose (see
    replay.js): regular files the chat really made, still the same file on disk,
-   not git's or the CLI's own, and not tracked by git. Every step that touches the
-   disk is async: this runs on the thread every other extension shares. */
+   not git's or the CLI's own, and not tracked by git. A chat a panel shows is
+   followed (files.js), so a change costs only its new lines. Every step that
+   touches the disk is async: this runs on the thread every other extension shares. */
 globalThis.__ccCFLedger = globalThis.__ccCFLedger || (function () {
     var fs = require("fs");
     var path = require("path");
     var os = require("os");
     var crypto = require("crypto");
-    var R = globalThis.__ccCFReplay;
+    var Files = globalThis.__ccCFFiles;
 
     var DIR = path.join(process.env.LOCALAPPDATA || path.join(os.homedir(), "AppData", "Local"),
         "claude-code-patches", "created-files");
-    var STAT_BATCH = 64;
-
-    function statOf(e) {
-        return fs.promises.stat(e.path, { bigint: true }).catch(function () { return null; });
-    }
-
-    async function onDisk(events, start) {
-        var kept = [];
-        for (var i = 0; i < events.length; i += STAT_BATCH) {
-            var batch = events.slice(i, i + STAT_BATCH);
-            var stats = await Promise.all(batch.map(statOf));
-            batch.forEach(function (e, j) { if (stats[j] && R.stillTheChats(e, stats[j], start)) kept.push(e); });
-        }
-        return kept;
-    }
-
-    function newestFirst(a, b) { return a.t === b.t ? 0 : a.t < b.t ? 1 : -1; }
+    var chats = new Map(), shaped = new WeakMap();
 
     /* Names exactly this list, so a confirmation can be tied to what it showed. */
     function listId(files) {
@@ -39,19 +24,35 @@ globalThis.__ccCFLedger = globalThis.__ccCFLedger || (function () {
         return crypto.createHash("sha1").update(all).digest("hex").slice(0, 16);
     }
 
-    async function read(sessionId) {
-        var text;
-        try { text = await fs.promises.readFile(path.join(DIR, sessionId + ".jsonl"), "utf8"); }
-        catch (e) { return { files: [], incomplete: false, list: listId([]) }; }
-        var r = await R.replay(text);
-        var candidates = r.alive.filter(function (e) { return !R.isInternal(e.path); });
-        var events = await onDisk(candidates, r.start);
-        var kept = new Set(await globalThis.__ccCFTracked.drop(events.map(function (e) { return e.path; })));
-        var files = events.filter(function (e) { return kept.has(e.path); }).map(function (e) {
-            return { path: e.path, name: path.basename(e.path), t: e.t || "" };
-        }).sort(newestFirst);
-        return { files: files, incomplete: r.gaps > 0, list: listId(files) };
+    function chatOf(id) {
+        var c = chats.get(id);
+        if (!c) chats.set(id, (c = Files.chat(path.join(DIR, id + ".jsonl"))));
+        return c;
     }
+
+    /* The panel's rows and the list's name, made once per change of the list. */
+    function shape(events) {
+        var s = shaped.get(events);
+        if (s) return s;
+        var files = events.map(function (e) { return { path: e.path, name: path.basename(e.path), t: e.t || "" }; });
+        s = { files: files, list: listId(files) };
+        shaped.set(events, s);
+        return s;
+    }
+
+    /* opts.verify: how many files the ledger names but nobody looked at yet to look
+       at now (newest first); opts.paths: files to look at again, or "all" for every
+       listed one (before acting on all of them). */
+    async function read(sessionId, opts) {
+        var c = chatOf(sessionId), o = opts || {};
+        var again = o.paths === "all" ? c.files().map(function (e) { return e.path; }) : o.paths;
+        await c.refresh({ paths: again || [], verify: o.verify || 0 });
+        var s = shape(c.files());
+        return { files: s.files, list: s.list, incomplete: c.gaps() > 0, checking: c.pending() };
+    }
+
+    /* No panel shows this chat any more: what was kept about it goes. */
+    function forget(sessionId) { chats.delete(sessionId); }
 
     /* Refused for an elevated process, and being refused means it exists. */
     function alive(pid) {
@@ -70,5 +71,5 @@ globalThis.__ccCFLedger = globalThis.__ccCFLedger || (function () {
         } catch (e) { return false; }
     }
 
-    return { DIR: DIR, read: read, recording: recording };
+    return { DIR: DIR, read: read, forget: forget, recording: recording };
 })();

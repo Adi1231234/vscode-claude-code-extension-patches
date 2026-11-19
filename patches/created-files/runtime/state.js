@@ -15,6 +15,7 @@ window.__ccCFState = window.__ccCFState || (function () {
     function clear() {
         state.files = [];
         state.total = 0;
+        state.checking = 0;
         state.incomplete = false;
         state.running = false;
         state.failed = 0;
@@ -73,6 +74,7 @@ window.__ccCFState = window.__ccCFState || (function () {
         if (!d || d.sessionId !== state.sid) return;
         state.files = d.files || [];
         state.total = d.total || 0;
+        state.checking = d.checking || 0;   // files not looked at on disk yet: total may still grow
         state.incomplete = !!d.incomplete;
         state.running = !!d.running;
         state.list = d.list || "";
