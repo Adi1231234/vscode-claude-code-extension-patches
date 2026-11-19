@@ -11,6 +11,7 @@
 globalThis.__ccCFFiles = globalThis.__ccCFFiles || (function () {
     var fsp = globalThis.__ccCFFs.promises;
     var R = globalThis.__ccCFReplay;
+    var I = globalThis.__ccCFInternal;
     var T = globalThis.__ccCFTracked;
     var F = globalThis.__ccCFFollow;
     var STAT_BATCH = 64;
@@ -19,7 +20,7 @@ globalThis.__ccCFFiles = globalThis.__ccCFFiles || (function () {
 
     /* The events whose file is on disk and still the one the chat made. */
     async function onDisk(events, start) {
-        var found = new Map(), wanted = events.filter(function (e) { return !R.isInternal(e.path); });
+        var found = new Map(), wanted = events.filter(function (e) { return !I.isInternal(e.path); });
         for (var i = 0; i < wanted.length; i += STAT_BATCH) {
             var batch = wanted.slice(i, i + STAT_BATCH);
             var stats = await Promise.all(batch.map(function (e) {
@@ -54,13 +55,23 @@ globalThis.__ccCFFiles = globalThis.__ccCFFiles || (function () {
             read = true;
             paths.forEach(function (p) { keys.add(String(p).toLowerCase()); });
             while (verify-- > 0 && unknown.length) keys.add(unknown.pop());
-            var looked = await onDisk(Array.from(keys).map(function (k) { return alive.get(k); }).filter(Boolean), ledger.replay.start);
-            keys.forEach(function (k) { if (looked.has(k)) seen.set(k, looked.get(k)); else seen.delete(k); });
+            var replay = ledger.replay;
+            var looked = await onDisk(Array.from(keys).map(function (k) { return alive.get(k); }).filter(Boolean), replay.start);
+            keys.forEach(function (k) {
+                if (looked.has(k)) { seen.set(k, looked.get(k)); return; }
+                seen.delete(k);
+                if (alive.has(k)) replay.letGo(k);   // not the chat's file any more: its record goes, once quiet
+            });
             var v = await T.version();
-            var scope = v === version ? keys : new Set(Array.from(keys).concat(Array.from(seen.keys())));
+            var scope = v === version ? keys : new Set(Array.from(keys).concat(Array.from(rows.keys())));
             version = v;
             var candidates = Array.from(scope).filter(function (k) { return seen.has(k); }).map(function (k) { return seen.get(k).path; });
             var allowed = new Set((await T.drop(candidates)).map(function (p) { return p.toLowerCase(); }));
+            scope.forEach(function (k) {
+                if (!seen.has(k) || allowed.has(k)) return;
+                seen.delete(k);   // git tracks it: real work, never listed, so nothing about it is kept
+                replay.letGo(k);
+            });
             var changed = false;
             scope.forEach(function (k) {
                 var e = allowed.has(k) ? seen.get(k) : undefined;
