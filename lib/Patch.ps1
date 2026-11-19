@@ -88,10 +88,17 @@ function Add-WebviewMessageHook {
     # reach into a neighbouring listener. The doc-preview surface has none within
     # 20k and is still correctly excluded.
     #
+    # The callback grew an optional wrapper across releases: 2.1.327 ships
+    # `onDidReceiveMessage(Me((c)=>{` where earlier it was `((c)=>{` directly - a
+    # generic listener helper around the arrow. It is matched as an optional
+    # `(?:[\w$]+\()?` so both shapes land, and the guard still goes right after
+    # the arrow's `{`, inside the body, wrapper or not. The anchoring literal is
+    # `onDidReceiveMessage(` (one paren) so it is found before either form.
+    #
     # Found through the literal after the listener's name (lib/Anchor.ps1): a
     # pass of this pattern over the whole bundle cost 1.2 s, twice per hook.
-    $rx = '(([\w$]+)\.webview\.onDidReceiveMessage\(\(([\w$]+)\)=>\{)([\s\S]{0,2000}?([\w$]+)\?\.fromClient\(\3\))'
-    $found = Find-IdentifierAnchored $Js '.webview.onDidReceiveMessage((' $rx
+    $rx = '(([\w$]+)\.webview\.onDidReceiveMessage\((?:[\w$]+\()?\(([\w$]+)\)=>\{)([\s\S]{0,2000}?([\w$]+)\?\.fromClient\(\3\))'
+    $found = Find-IdentifierAnchored $Js '.webview.onDidReceiveMessage(' $rx
     if (-not $found.Count) { return $null }
     $hook = Read-Text $HookPath
     # Last first, so the earlier matches' offsets still hold.

@@ -63,6 +63,7 @@ $order = @(
     'panel-background'
     'mcp-reconnect-all'
     'mcp-self-control'
+    'created-files'
 )
 
 # The anchors track the current extension line. An install left far behind (easy to

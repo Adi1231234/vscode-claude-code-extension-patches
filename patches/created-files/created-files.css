@@ -1,0 +1,120 @@
+/* CREATEDFILESCSS */
+/* CREATEDFILES: the header icon with its live count badge, and the list dialog.
+   Colours are the app's own custom properties, never literals, so the control
+   follows the theme. The icon button itself is the app's component, so its size,
+   hover and focus ring come from upstream; only the wrapper and the badge are
+   ours. */
+
+/* The wrapper sits in the header flex row like any other icon button. */
+.cc-cf {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+}
+.cc-cf.cc-cf-hidden { display: none; }
+.cc-cf-glyph { display: block; }
+
+/* A small count bubble on the icon's inline-end top corner (follows RTL). */
+.cc-cf-badge {
+    position: absolute;
+    top: 1px;
+    inset-inline-end: 0;
+    min-width: 14px;
+    height: 14px;
+    box-sizing: border-box;
+    padding: 0 3px;
+    border-radius: 7px;
+    background: var(--app-button-background);
+    color: var(--app-button-foreground);
+    font-size: 9px;
+    line-height: 14px;
+    font-weight: 600;
+    text-align: center;
+    pointer-events: none;
+    direction: ltr;
+}
+.cc-cf-badge.cc-cf-empty { display: none; }
+/* When part of the window was unwatched the count is a lower bound; that is said
+   plainly in the dialog (the gap warning). The badge keeps the confident accent
+   colour rather than recolouring to whatever --app-warning-foreground happens to
+   be - it is grey in the default theme, which would read as "disabled". */
+
+/* The dialog list: the app's own list metrics (4px 8px rows, 2px gaps). It takes
+   the room the box has rather than a share of the viewport: vh ignores the zoom
+   patch, so at zoom 2 a 52vh list pushed the buttons out of the panel. */
+.cc-cf-list {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    margin-top: var(--app-spacing-small, 4px);
+}
+.cc-cf-row {
+    direction: ltr;
+    display: flex;
+    align-items: center;
+    gap: var(--app-spacing-small, 4px);
+    padding: var(--app-list-item-padding, 4px 8px);
+    border-radius: var(--corner-radius-small, 4px);
+}
+.cc-cf-row:hover { background: var(--app-list-hover-background, rgba(255, 255, 255, 0.06)); }
+.cc-cf-text { flex: 1 1 auto; min-width: 0; }
+.cc-cf-name {
+    font-size: 12px;
+    color: var(--app-primary-foreground);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.cc-cf-path {
+    font-size: 11px;
+    color: var(--app-secondary-foreground);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    direction: ltr;
+    unicode-bidi: plaintext;
+}
+
+/* Row actions: borderless icon buttons that only colour up on hover. */
+.cc-cf-act {
+    flex: 0 0 auto;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    padding: 0;
+    border: 0;
+    border-radius: var(--corner-radius-small, 4px);
+    background: transparent;
+    color: var(--app-secondary-foreground);
+    cursor: pointer;
+}
+.cc-cf-act:hover {
+    background: var(--app-list-active-background, rgba(255, 255, 255, 0.1));
+    color: var(--app-primary-foreground);
+}
+.cc-cf-del:hover { color: var(--app-error-foreground, var(--app-primary-foreground)); }
+
+.cc-cf-warn, .cc-cf-empty-note {
+    font-size: 11.5px;
+    color: var(--app-secondary-foreground);
+    padding: var(--app-spacing-small, 4px) var(--app-spacing-medium, 8px);
+}
+.cc-cf-warn { color: var(--app-warning-foreground, var(--app-secondary-foreground)); }
+.cc-cf-warn:empty, .cc-cf-empty-note:empty { display: none; }
+
+/* Footer buttons, in the shared dialog's foot. */
+.cc-cf-foot-btn {
+    font-size: 12px;
+    padding: 4px 10px;
+    border-radius: var(--corner-radius-medium, 6px);
+    border: 1px solid var(--app-widget-border, transparent);
+    background: transparent;
+    color: var(--app-primary-foreground);
+    cursor: pointer;
+}
+.cc-cf-foot-btn:hover { background: var(--app-list-hover-background, rgba(255, 255, 255, 0.06)); }
+.cc-cf-foot-btn:disabled { color: var(--app-secondary-foreground); cursor: default; }
+.cc-cf-delall:hover, .cc-cf-delall.cc-cf-armed { color: var(--app-error-foreground, var(--app-primary-foreground)); }
+.cc-cf-delall.cc-cf-armed { border-color: var(--app-error-foreground, var(--app-widget-border, transparent)); }
