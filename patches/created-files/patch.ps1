@@ -41,8 +41,8 @@ function Invoke-Patch {
 
     # Shared webview runtimes (self-guarded, so re-including is a no-op), then our
     # own, in dependency order: ccStore before ccSession, dom/watch before state,
-    # modal/copy before the dialog.
-    $libs = @('ccStore.js', 'ccDom.js', 'ccWatch.js', 'ccSession.js', 'ccModal.js', 'ccCopyText.js') |
+    # the modal before the dialog.
+    $libs = @('ccStore.js', 'ccDom.js', 'ccWatch.js', 'ccSession.js', 'ccModal.js') |
         ForEach-Object { Get-LibJsPath $_ }
     $mine = @('icon.js', 'link.js', 'state.js', 'rows.js', 'dialog.js') |
         ForEach-Object { Join-Path $PSScriptRoot "runtime/$_" }
@@ -52,7 +52,7 @@ function Invoke-Patch {
         '__JSX__' = '${1}'; '__BUTTON__' = '${2}'
     })).Trim()
 
-    $hostJs = (@('tracked.js', 'ledger.js', 'actions.js', 'live.js') |
+    $hostJs = (@('tracked.js', 'ledger.js', 'actions.js', 'watch.js', 'live.js') |
         ForEach-Object { Read-Text (Join-Path $PSScriptRoot "host/$_") }) -join "`n"
 
     Write-Text $Ctx.WebJs ("/* CREATEDFILES */`n" + $runtime + "`n" + (Set-MatchText $wc $btn[0] $btn[0].Result($call)))

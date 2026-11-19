@@ -52,9 +52,10 @@ a file that is on this chat's list at that moment.
 - **host** (`host/`) - `ledger.js` replays one chat's ledger and applies the rule
   above, `tracked.js` asks git, `actions.js` reveals, copies and trashes through
   the editor's own APIs, so nothing is shelled out for those and neither editor
-  is branched on. `live.js` answers the panel's messages, holds one directory
-  watcher for the whole host while a panel listens, and pushes a fresh list when
-  that chat's ledger changes. A panel receives the newest 300 files and the total;
+  is branched on. `watch.js` is the folder watch, which survives the folder being
+  removed. `live.js` answers the panel's messages, keeps that one watch for the
+  whole host while a panel listens, and pushes a fresh list when that chat's
+  ledger changes. A panel receives the newest 300 files and the total;
   Copy all and Delete all work on the host, so they cover every file.
 
 ## Visibility

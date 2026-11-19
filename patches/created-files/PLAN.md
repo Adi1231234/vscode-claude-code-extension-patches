@@ -89,7 +89,7 @@ never while idle, so a reader can tell it is alive), `lostEvents`, `gaps`.
 
 - Phase 0 and Phase 2: adi-tools PR #49.
 - Phase 3 (this repo): verified against the real 2.1.327 bundle and live in the lab
-  against a synthetic ledger (`tests/host.test.js` covers the host half).
+  against a synthetic ledger (`tests/` covers the host half).
 
 ### A pre-existing break found and fixed along the way
 

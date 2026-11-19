@@ -2,9 +2,9 @@
    and "Delete all" must never reach them. The same rule as the Adi Tools package
    (adi-tools/packages/created-files/tracked.mjs), which the bundle cannot import.
 
-   It asks git only about the candidate paths, in batches: Windows refuses a
-   command line past 32,767 characters, and a refused question must not read as
-   "untracked". A path git could not answer about counts as tracked. */
+   It asks git once per repository, about the candidate paths when they fit on a
+   command line: Windows refuses one past 32,767 characters, so beyond that git
+   lists the whole repository. A path git could not answer about counts as tracked. */
 globalThis.__ccCFTracked = globalThis.__ccCFTracked || (function () {
     var fs = require("fs");
     var path = require("path");
@@ -32,39 +32,25 @@ globalThis.__ccCFTracked = globalThis.__ccCFTracked || (function () {
         return root;
     }
 
-    function batches(items) {
-        var out = [], batch = [], chars = 0;
-        items.forEach(function (item) {
-            if (batch.length && chars + item.length + 3 > MAX_ARGS_CHARS) { out.push(batch); batch = []; chars = 0; }
-            batch.push(item);
-            chars += item.length + 3;
-        });
-        if (batch.length) out.push(batch);
-        return out;
-    }
-
     function lsFiles(root, rels) {
-        var args = ["-C", root, "--literal-pathspecs", "ls-files", "-z", "--"].concat(rels);
+        var chars = rels.reduce(function (n, rel) { return n + rel.length + 3; }, 0);
+        var args = ["-C", root, "--literal-pathspecs", "ls-files", "-z"];
+        if (chars <= MAX_ARGS_CHARS) args = args.concat(["--"], rels);
         return new Promise(function (resolve, reject) {
-            execFile("git", args, { maxBuffer: 1 << 24, windowsHide: true }, function (err, stdout) {
+            execFile("git", args, { maxBuffer: 1 << 28, windowsHide: true }, function (err, stdout) {
                 if (err) reject(err); else resolve(stdout);
             });
         });
     }
 
     async function trackedIn(root, group) {
-        var tracked = new Set();
         var rels = group.map(function (p) { return path.relative(root, p); });
-        for (var batch of batches(rels)) {
-            try {
-                (await lsFiles(root, batch)).split("\0").forEach(function (rel) {
-                    if (rel) tracked.add(norm(path.join(root, rel)));
-                });
-            } catch (e) {
-                batch.forEach(function (rel) { tracked.add(norm(path.join(root, rel))); });
-            }
+        try {
+            var listed = (await lsFiles(root, rels)).split("\0").filter(Boolean);
+            return new Set(listed.map(function (rel) { return norm(path.join(root, rel)); }));
+        } catch (e) {
+            return new Set(group.map(norm));
         }
-        return tracked;
     }
 
     /* The paths git does not track; anything outside a repository is kept. */

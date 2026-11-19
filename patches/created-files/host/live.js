@@ -7,13 +7,12 @@
    list a panel receives is capped: a single npm install is tens of thousands of
    files. Acting on a path is checked against a fresh read of that chat's ledger. */
 globalThis.__ccCF = globalThis.__ccCF || (function () {
-    var fs = require("fs");
     var L = globalThis.__ccCFLedger;
     var A = globalThis.__ccCFActions;
     var LIST_CAP = 300, SETTLE_MS = 500;
     var byId = new Map(), ofView = new Map(), known = new WeakSet();
     var flights = new Map(), timers = new Map(), latest = new Map();
-    var watcher = null, wasRecording = false;
+    var wasRecording = false;
 
     function deliver(id, extra) {
         var data = latest.get(id), views = byId.get(id);
@@ -32,43 +31,36 @@ globalThis.__ccCF = globalThis.__ccCF || (function () {
         if (f) { f.again = true; f.extra = Object.assign(f.extra || {}, extra); return; }
         f = { again: false, extra: null };
         flights.set(id, f);
-        wasRecording = L.recording();
-        L.read(id).then(function (data) { latest.set(id, data); deliver(id, extra); }, function () {}).then(function () {
+        syncRecording();
+        L.read(id).then(function (data) {
+            if (!byId.has(id)) return;   // its last panel left while this was reading
+            latest.set(id, data);
+            deliver(id, extra);
+        }, function () {}).then(function () {
             flights.delete(id);
             if (f.again && byId.has(id)) refresh(id, f.extra);
         });
     }
 
     function settle(id) {
-        if (timers.has(id)) return;
+        if (timers.has(id) || !byId.has(id)) return;
         timers.set(id, setTimeout(function () { timers.delete(id); if (byId.has(id)) refresh(id); }, SETTLE_MS));
     }
 
-    function onStatus() {
+    /* Whether the recorder runs is one fact for every chat, so a change goes to all. */
+    function syncRecording() {
         var now = L.recording();
         if (now === wasRecording) return;
         wasRecording = now;
         byId.forEach(function (_v, id) { deliver(id); });
     }
 
-    function closeWatch() {
-        if (watcher) { try { watcher.close(); } catch (e) {} }
-        watcher = null;
-    }
-
-    /* The folder is made here so the watch can attach before the recorder's first
-       run; a watch whose folder was removed reports an error and is made anew. */
-    function ensureWatch() {
-        if (watcher) return;
-        try {
-            fs.mkdirSync(L.DIR, { recursive: true });
-            watcher = fs.watch(L.DIR, function (_evt, name) {
-                if (name === "status.json") onStatus();
-                else if (name && name.slice(-6) === ".jsonl") settle(name.slice(0, -6));
-            });
-            watcher.on("error", function () { closeWatch(); ensureWatch(); });
-        } catch (e) { closeWatch(); }
-    }
+    var folder = globalThis.__ccCFWatch.folder(L.DIR, function (name) {
+        if (name === "status.json") syncRecording();
+        else if (name.slice(-6) === ".jsonl") settle(name.slice(0, -6));
+    }, function () {
+        byId.forEach(function (_v, id) { refresh(id); });
+    });
 
     function leave(wv) {
         var id = ofView.get(wv);
@@ -79,7 +71,7 @@ globalThis.__ccCF = globalThis.__ccCF || (function () {
         if (views.size) return;
         byId.delete(id);
         latest.delete(id);
-        if (!byId.size) closeWatch();
+        if (!byId.size) folder.stop();
     }
 
     function subscribe(view, id) {
@@ -93,7 +85,7 @@ globalThis.__ccCF = globalThis.__ccCF || (function () {
         ofView.set(wv, id);
         if (!byId.has(id)) byId.set(id, new Set());
         byId.get(id).add(wv);
-        ensureWatch();
+        folder.ensure();
         refresh(id);
     }
 

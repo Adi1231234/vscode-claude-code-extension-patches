@@ -73,7 +73,7 @@ window.__ccCFState = window.__ccCFState || (function () {
         state.total = d.total || 0;
         state.incomplete = !!d.incomplete;
         state.running = !!d.running;
-        state.failed = d.failed || 0;
+        if ("failed" in d) state.failed = d.failed;   // stays until the next delete reports
         state.copied = d.copied || 0;
         redraw();
     }

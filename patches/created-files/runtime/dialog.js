@@ -60,7 +60,7 @@
         var sync = window.__ccCFRows.list(rowsEl, send);
         var copy = footBtn(COPY, "cc-cf-copy");
         copy.onclick = function () { if (state().total) send({ op: "copyAll" }); };
-        copy.onmouseleave = function () { copy.textContent = COPY; };
+        copy.onmouseleave = copy.onblur = function () { copy.textContent = COPY; };
         var deleteAll = deleteAllButton();
 
         var sh = window.__ccModal({
@@ -72,14 +72,15 @@
 
         function render() {
             var s = state();
+            var focusInRow = rowsEl.contains(document.activeElement);
             sync(s.files);
+            if (focusInRow && !rowsEl.contains(document.activeElement)) copy.focus();   // its row just left
             deleteAll.sync(s.total);
             warn.textContent = note(s);
             info.textContent = !s.total ? "No files from this chat are still on disk." :
                 s.total > s.files.length ? "Showing the newest " + s.files.length + ". Copy all and Delete all cover every file." : "";
             sh.sub.textContent = plural(s.total, "file", "files") + " still on disk";
             if (s.copied) copy.textContent = "Copied " + plural(s.copied, "path", "paths");
-            if (document.activeElement === document.body) copy.focus();
         }
 
         sh.box.appendChild(scroll);
