@@ -19,7 +19,7 @@ globalThis.__ccCF = globalThis.__ccCF || (function () {
         if (!data || !views) return;
         var msg = Object.assign({
             type: "ccCFData", sessionId: id, files: data.files.slice(0, LIST_CAP), total: data.files.length,
-            incomplete: data.incomplete, running: wasRecording
+            incomplete: data.incomplete, running: wasRecording, list: data.list
         }, extra);
         views.forEach(function (wv) {
             try { Promise.resolve(wv.postMessage(msg)).catch(function () {}); } catch (e) {}
@@ -105,6 +105,15 @@ globalThis.__ccCF = globalThis.__ccCF || (function () {
         });
     }
 
+    /* The user confirmed one exact list. If the chat has changed it since, nothing is
+       moved: the fresh list goes back to the dialog, which asks again. */
+    function removeAll(id, confirmed) {
+        L.read(id).then(function (data) {
+            if (data.list !== confirmed) { refresh(id, { failed: 0 }); return; }
+            remove(id, null);
+        }).catch(function () { refresh(id, { failed: 0 }); });
+    }
+
     function handle(msg, view) {
         if (!msg || msg.type !== "ccCF" || !view) return false;
         var id = ofView.get(view.webview);
@@ -116,7 +125,7 @@ globalThis.__ccCF = globalThis.__ccCF || (function () {
             return A.copy(paths).then(function () { deliver(id, { copied: paths.length }); });
         });
         else if (msg.op === "delete") remove(id, [msg.path]);
-        else if (msg.op === "deleteAll") remove(id, null);
+        else if (msg.op === "deleteAll") removeAll(id, msg.list);
         return true;
     }
 

@@ -30,9 +30,26 @@ run({
     assert.strictEqual((await copied).copied, 320);
     assert.strictEqual(editor.clipboard.split('\n').length, 320);
     const after = view.next();
-    send(view, { op: 'deleteAll' });
+    send(view, { op: 'deleteAll', list: data.list });
     assert.strictEqual((await after).total, 0);
     assert.strictEqual(trashed.splice(0).length, 320);
+    view.dispose();
+  },
+
+  async 'delete all moves nothing when the list is not the one confirmed'() {
+    const a = touch('confirm', 'a.txt');
+    ledger('confirm', [a]);
+    const { view, data } = await open('confirm');
+    ledger('confirm', [a, touch('confirm', 'b.txt')]);
+    const answer = view.next();
+    send(view, { op: 'deleteAll', list: data.list });
+    assert.strictEqual((await answer).failed, 0);
+    await wait(400);
+    assert.deepStrictEqual(trashed.splice(0), []);
+    assert.ok(fs.existsSync(a));
+    send(view, { op: 'deleteAll' });
+    await wait(400);
+    assert.deepStrictEqual(trashed.splice(0), [], 'no confirmation at all moves nothing either');
     view.dispose();
   },
 

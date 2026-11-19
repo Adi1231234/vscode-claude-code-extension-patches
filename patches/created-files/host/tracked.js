@@ -1,70 +1,84 @@
-/* Drops the created files git already tracks: those are real work, not leftovers,
-   and "Delete all" must never reach them. The same rule as the Adi Tools package
-   (adi-tools/packages/created-files/tracked.mjs), which the bundle cannot import.
-
-   It asks git once per repository, about the candidate paths when they fit on a
-   command line: Windows refuses one past 32,767 characters, so beyond that git
-   lists the whole repository. A path git could not answer about counts as tracked. */
+/* Drops the created files that belong to a repository: what git tracks is real
+   work and "Delete all" must never reach it, and a bare repository's files are its
+   database. The same rule as adi-tools/packages/created-files/tracked.mjs, which
+   the bundle cannot import. What git tracks is kept per repository until its index
+   changes; when git cannot answer, nothing from that repository is offered. */
 globalThis.__ccCFTracked = globalThis.__ccCFTracked || (function () {
-    var fs = require("fs");
+    var fsp = require("fs").promises;
     var path = require("path");
     var execFile = require("child_process").execFile;
+    var MAX_LISTINGS = 16;
+    var listings = new Map();
 
-    var MAX_ARGS_CHARS = 20000;
-
+    /* Windows ignores case in a path and git does not. */
     function norm(p) { return p.replace(/\\/g, "/").toLowerCase(); }
+    function statOf(p) { return fsp.stat(p).catch(function () { return null; }); }
 
     /* What git itself accepts: a stray empty .git folder is not a repository, and
        taking it for one hid every file below it (a C:\.git hid the whole drive). */
-    function isRepo(dir) {
-        var git = path.join(dir, ".git");
-        try {
-            if (fs.statSync(git).isFile()) return true;   // a worktree's link file
-            return fs.existsSync(path.join(git, "HEAD")) && fs.existsSync(path.join(git, "objects"));
-        } catch (e) { return false; }
+    async function kindOf(dir) {
+        var git = await statOf(path.join(dir, ".git"));
+        if (git && git.isFile()) return "repository";   // a worktree's link file
+        if (git && (await statOf(path.join(dir, ".git", "HEAD"))) && (await statOf(path.join(dir, ".git", "objects")))) return "repository";
+        var parts = await Promise.all(["HEAD", "objects", "refs"].map(function (n) { return statOf(path.join(dir, n)); }));
+        return parts.every(Boolean) ? "bare" : null;
     }
 
-    function repoRootOf(dir, known) {
+    function ownerOf(dir, known) {
         if (known.has(dir)) return known.get(dir);
-        var up = path.dirname(dir);
-        var root = isRepo(dir) ? dir : up === dir ? null : repoRootOf(up, known);
-        known.set(dir, root);
-        return root;
+        var found = kindOf(dir).then(function (kind) {
+            if (kind) return { root: dir, kind: kind };
+            var up = path.dirname(dir);
+            return up === dir ? null : ownerOf(up, known);
+        });
+        known.set(dir, found);
+        return found;
     }
 
-    function lsFiles(root, rels) {
-        var chars = rels.reduce(function (n, rel) { return n + rel.length + 3; }, 0);
-        var args = ["-C", root, "--literal-pathspecs", "ls-files", "-z"];
-        if (chars <= MAX_ARGS_CHARS) args = args.concat(["--"], rels);
+    async function indexStamp(root) {
+        var gitDir = path.join(root, ".git");
+        if ((await fsp.stat(gitDir)).isFile()) {
+            gitDir = path.resolve(root, /^gitdir:\s*(.+)$/m.exec(await fsp.readFile(gitDir, "utf8"))[1].trim());
+        }
+        var index = await statOf(path.join(gitDir, "index"));
+        return index ? index.size + ":" + index.mtimeMs : "empty";
+    }
+
+    function lsFiles(root) {
         return new Promise(function (resolve, reject) {
-            execFile("git", args, { maxBuffer: 1 << 28, windowsHide: true }, function (err, stdout) {
+            execFile("git", ["-C", root, "ls-files", "-z"], { maxBuffer: 1 << 28, windowsHide: true }, function (err, stdout) {
                 if (err) reject(err); else resolve(stdout);
             });
         });
     }
 
-    async function trackedIn(root, group) {
-        var rels = group.map(function (p) { return path.relative(root, p); });
+    async function trackedIn(root) {
         try {
-            var listed = (await lsFiles(root, rels)).split("\0").filter(Boolean);
-            return new Set(listed.map(function (rel) { return norm(path.join(root, rel)); }));
-        } catch (e) {
-            return new Set(group.map(norm));
-        }
+            var stamp = await indexStamp(root);
+            var known = listings.get(root);
+            if (known && known.stamp === stamp) return known.paths;
+            var rels = (await lsFiles(root)).split("\0").filter(Boolean);
+            var paths = new Set(rels.map(function (rel) { return norm(path.join(root, rel)); }));
+            if (listings.size >= MAX_LISTINGS) listings.clear();
+            listings.set(root, { stamp: stamp, paths: paths });
+            return paths;
+        } catch (e) { return null; }
     }
 
-    /* The paths git does not track; anything outside a repository is kept. */
+    /* The paths outside any repository, and those git does not track. */
     async function drop(paths) {
-        var roots = new Map(), byRepo = new Map(), kept = [];
-        paths.forEach(function (p) {
-            var root = repoRootOf(path.dirname(p), roots);
-            if (!root) { kept.push(p); return; }
-            if (!byRepo.has(root)) byRepo.set(root, []);
-            byRepo.get(root).push(p);
+        var known = new Map(), byRepo = new Map(), kept = [];
+        var owners = await Promise.all(paths.map(function (p) { return ownerOf(path.dirname(p), known); }));
+        paths.forEach(function (p, i) {
+            var owner = owners[i];
+            if (!owner) { kept.push(p); return; }
+            if (owner.kind !== "repository") return;
+            if (!byRepo.has(owner.root)) byRepo.set(owner.root, []);
+            byRepo.get(owner.root).push(p);
         });
         for (var entry of byRepo) {
-            var tracked = await trackedIn(entry[0], entry[1]);
-            entry[1].forEach(function (p) { if (!tracked.has(norm(p))) kept.push(p); });
+            var tracked = await trackedIn(entry[0]);
+            if (tracked) entry[1].forEach(function (p) { if (!tracked.has(norm(p))) kept.push(p); });
         }
         return kept;
     }

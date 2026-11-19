@@ -24,8 +24,8 @@
     box-sizing: border-box;
     padding: 0 3px;
     border-radius: 7px;
-    background: var(--app-accent-color);
-    color: var(--app-primary-foreground);
+    background: var(--app-button-background);
+    color: var(--app-button-foreground);
     font-size: 9px;
     line-height: 14px;
     font-weight: 600;
@@ -115,5 +115,6 @@
     cursor: pointer;
 }
 .cc-cf-foot-btn:hover { background: var(--app-list-hover-background, rgba(255, 255, 255, 0.06)); }
+.cc-cf-foot-btn:disabled { color: var(--app-secondary-foreground); cursor: default; }
 .cc-cf-delall:hover, .cc-cf-delall.cc-cf-armed { color: var(--app-error-foreground, var(--app-primary-foreground)); }
 .cc-cf-delall.cc-cf-armed { border-color: var(--app-error-foreground, var(--app-widget-border, transparent)); }

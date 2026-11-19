@@ -19,6 +19,8 @@ window.__ccCFState = window.__ccCFState || (function () {
         state.running = false;
         state.failed = 0;
         state.copied = 0;
+        state.list = "";
+        state.reports = 0;
     }
 
     function shown() { return state.running || state.total > 0; }
@@ -73,7 +75,11 @@ window.__ccCFState = window.__ccCFState || (function () {
         state.total = d.total || 0;
         state.incomplete = !!d.incomplete;
         state.running = !!d.running;
-        if ("failed" in d) state.failed = d.failed;   // stays until the next delete reports
+        state.list = d.list || "";
+        if ("failed" in d) {   // stays until the next delete reports
+            state.failed = d.failed;
+            state.reports++;
+        }
         state.copied = d.copied || 0;
         redraw();
     }

@@ -21,7 +21,7 @@ const vscodeStub = {
 };
 const load = (name) => new Function('require', fs.readFileSync(path.join(__dirname, '..', 'host', name), 'utf8'))(
   (m) => (m === 'vscode' ? vscodeStub : require(m)));
-['tracked.js', 'ledger.js', 'actions.js', 'watch.js', 'live.js'].forEach(load);
+['tracked.js', 'replay.js', 'ledger.js', 'actions.js', 'watch.js', 'live.js'].forEach(load);
 
 const touch = (...parts) => {
   const p = path.join(root, ...parts);
@@ -31,6 +31,10 @@ const touch = (...parts) => {
 };
 const ledger = (id, paths) => fs.writeFileSync(path.join(ledgerDir, id + '.jsonl'),
   paths.map((p) => JSON.stringify({ t: '2026-11-19T00:00:00Z', op: 'new', path: p })).join('\r\n') + '\r\n');
+
+/* A ledger of exact events: { op, path, ...anything else the line carries }. */
+const events = (id, list) => fs.writeFileSync(path.join(ledgerDir, id + '.jsonl'),
+  list.map((e) => JSON.stringify(Object.assign({ t: '2026-11-19T00:00:00Z' }, e))).join('\r\n') + '\r\n');
 
 function repo(name) {
   const dir = path.join(root, name);
@@ -76,4 +80,4 @@ async function run(tests) {
   process.exit(failed ? 1 : 0);
 }
 
-module.exports = { root, ledgerDir, trashed, editor, touch, ledger, repo, panel, send, open, names, wait, run };
+module.exports = { root, ledgerDir, trashed, editor, touch, ledger, events, repo, panel, send, open, names, wait, run };

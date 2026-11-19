@@ -8,7 +8,7 @@
    rather than being removed by hand. */
 (function () {
     var el = window.__ccCFRows.el;
-    var COPY = "Copy all paths", DELETE_ALL = "Delete all";
+    var COPY = "Copy all paths", DELETE_ALL = "Delete all", ANSWER_AFTER_MS = 600;
 
     function state() { return window.__ccCFState.get(); }
     function send(msg) { window.__ccCFState.send(msg); }
@@ -20,26 +20,47 @@
         return b;
     }
 
-    /* The first press only asks: it can move thousands of files at once. The
-       question names a number, so it lapses the moment that number changes. */
+    /* The first press only asks: it can move thousands of files at once. The question
+       is about one exact list, so it lapses the moment that list changes, and a double
+       click is one press, not a question and its answer. */
     function deleteAllButton() {
-        var b = footBtn(DELETE_ALL, "cc-cf-delall"), armedFor = 0;
+        var b = footBtn(DELETE_ALL, "cc-cf-delall"), armedFor = "", armedAt = 0, sentAt = -1;
         function disarm() {
-            armedFor = 0;
+            if (sentAt >= 0) return;
+            armedFor = "";
             b.textContent = DELETE_ALL;
             b.classList.remove("cc-cf-armed");
         }
         b.onclick = function () {
-            var n = state().total;
-            if (!n) return;
-            if (armedFor === n) { disarm(); send({ op: "deleteAll" }); return; }
-            armedFor = n;
-            b.textContent = "Delete " + plural(n, "file", "files") + "?";
-            b.classList.add("cc-cf-armed");
+            var s = state();
+            if (!s.total || sentAt >= 0) return;
+            if (armedFor !== s.list) {
+                armedFor = s.list;
+                armedAt = Date.now();
+                b.textContent = "Delete " + plural(s.total, "file", "files") + "?";
+                b.classList.add("cc-cf-armed");
+                return;
+            }
+            if (Date.now() - armedAt < ANSWER_AFTER_MS) return;
+            disarm();
+            sentAt = s.reports;
+            b.disabled = true;
+            b.textContent = "Moving to the Recycle Bin...";
+            send({ op: "deleteAll", list: s.list });
         };
         b.onblur = disarm;
         b.onmouseleave = disarm;
-        return { el: b, sync: function (n) { if (armedFor && armedFor !== n) disarm(); } };
+        return {
+            el: b,
+            sync: function (s) {
+                if (sentAt >= 0 && s.reports !== sentAt) {
+                    sentAt = -1;
+                    b.disabled = false;
+                    b.textContent = DELETE_ALL;
+                }
+                if (armedFor && armedFor !== s.list) disarm();
+            }
+        };
     }
 
     function note(s) {
@@ -75,7 +96,7 @@
             var focusInRow = rowsEl.contains(document.activeElement);
             sync(s.files);
             if (focusInRow && !rowsEl.contains(document.activeElement)) copy.focus();   // its row just left
-            deleteAll.sync(s.total);
+            deleteAll.sync(s);
             warn.textContent = note(s);
             info.textContent = !s.total ? "No files from this chat are still on disk." :
                 s.total > s.files.length ? "Showing the newest " + s.files.length + ". Copy all and Delete all cover every file." : "";

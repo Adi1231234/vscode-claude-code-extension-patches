@@ -27,19 +27,25 @@ so the list may be incomplete). A reader replays the lines, ignoring case.
 
 ## What is listed
 
-A ledger holds everything the chat's processes made, and most of that is not
+A ledger holds everything the chat's processes touched, and much of that is not
 for deleting. Measured on real ledgers (2026-11-19), 96 of 181 existing entries
-were folders, git's objects or the CLI's own files, the chat's transcript among
-them. So the list is only regular files that still exist, and never:
+were folders, git's objects or the CLI's own files, and `~/.claude.json` was
+listed because the CLI saves it by renaming a temp over it. So a file is listed
+only when (`host/replay.js`):
 
-- anything inside `.git`, or a worktree's `.git` link file;
-- anything under `~/.claude`, or the CLI's temp folder apart from a chat's
-  `scratchpad`;
-- files git tracks. A path git could not answer about counts as tracked.
+- the chat really made it: a `new` line, or a `rename` the change journal
+  confirmed. A `rewrite` (an existing file saved again) adds nothing;
+- it is still that file: the same NTFS id, and not older than its creation;
+- it is not internal: `.git`, a bare repository, `~/.claude`, `~/.claude.json`,
+  the CLI's cache and temp files (a chat's `scratchpad` is its work), Windows'
+  per-user data, the Recycle Bin, side streams;
+- git does not track it (case folded). When git cannot answer, nothing from
+  that repository is listed.
 
-The same rule lives in `adi-tools/packages/created-files`; change the two together.
+The same rules live in `adi-tools/packages/created-files`; change the two together.
 The host also re-reads the ledger before acting, so a button can only ever reach
-a file that is on this chat's list at that moment.
+a file that is on this chat's list at that moment, and Delete all moves nothing
+unless the list is exactly the one the user confirmed.
 
 ## The two halves
 
@@ -65,7 +71,8 @@ file to show; otherwise it is hidden. The badge shows the count (capped at `999+
 When part of the chat went unwatched the dialog says the list may be incomplete.
 
 Delete all asks once before it acts: the first press only names how many files it
-will move to the Recycle Bin.
+will move to the Recycle Bin, a second press within 0.6 s (a double click) is
+ignored, and the question lapses when the list changes.
 
 ## Why it is a patch and not a mod
 
