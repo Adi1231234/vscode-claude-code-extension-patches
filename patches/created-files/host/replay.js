@@ -42,28 +42,43 @@ globalThis.__ccCFReplay = globalThis.__ccCFReplay || (function () {
 
     function breathe() { return new Promise(function (resolve) { setImmediate(resolve); }); }
 
-    async function replay(text) {
-        var alive = new Map(), made = new Map(), gaps = 0, start = Infinity;
-        var lines = text.split("\n");
-        for (var i = 0; i < lines.length; i++) {
-            if (i % SLICE === SLICE - 1) await breathe();   // this thread is every extension's
-            var e = parse(lines[i]);
-            if (!e) continue;
+    /* A ledger replayed one line at a time, so a reader following a growing ledger
+       applies only the lines added since it last looked. alive: lower-cased path ->
+       the event that made the file now there; made: the same, kept after a delete. */
+    function create() {
+        var r = { alive: new Map(), made: new Map(), gaps: 0, start: Infinity };
+        /* Returns the lower-cased path the line was about, or null. */
+        r.apply = function (line) {
+            var e = parse(line);
+            if (!e) return null;
             var t = Date.parse(e.t);
-            if (t < start) start = t;
-            if (e.op === "gap") gaps++;
-            if (typeof e.path !== "string") continue;
+            if (t < r.start) r.start = t;
+            if (e.op === "gap") r.gaps++;
+            if (typeof e.path !== "string") return null;
             var key = e.path.toLowerCase();
-            if (e.op === "delete") alive.delete(key);
+            if (e.op === "delete") r.alive.delete(key);
             else if (e.op === "new" || (e.op === "rename" && e.verified)) {
-                if (!made.has(key)) made.set(key, e);
-                alive.set(key, Object.assign({}, made.get(key), { fid: e.fid }));
-            } else if (e.op === "rewrite" && made.has(key)) {
-                var before = alive.get(key);
-                alive.set(key, Object.assign({}, made.get(key), { fid: e.fid || (before && before.fid) }));
+                if (!r.made.has(key)) r.made.set(key, e);
+                r.alive.set(key, Object.assign({}, r.made.get(key), { fid: e.fid }));
+            } else if (e.op === "rewrite" && r.made.has(key)) {
+                var before = r.alive.get(key);
+                r.alive.set(key, Object.assign({}, r.made.get(key), { fid: e.fid || (before && before.fid) }));
             }
+            return key;
+        };
+        return r;
+    }
+
+    /* Applies lines, letting other work run every few thousand of them (this thread
+       is every extension's). Resolves to the paths they were about. */
+    async function applyLines(r, lines) {
+        var touched = new Set();
+        for (var i = 0; i < lines.length; i++) {
+            if (i % SLICE === SLICE - 1) await breathe();
+            var key = r.apply(lines[i]);
+            if (key) touched.add(key);
         }
-        return { alive: Array.from(alive.values()), gaps: gaps, start: start };
+        return touched;
     }
 
     /* Another file saved at that path later has another identity, and a file older
@@ -75,5 +90,5 @@ globalThis.__ccCFReplay = globalThis.__ccCFReplay || (function () {
         return !(Number(s.birthtimeMs) < madeAt - CLOCK_SLACK_MS);
     }
 
-    return { isInternal: isInternal, replay: replay, stillTheChats: stillTheChats };
+    return { isInternal: isInternal, create: create, applyLines: applyLines, stillTheChats: stillTheChats };
 })();

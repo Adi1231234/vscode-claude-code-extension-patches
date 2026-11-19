@@ -43,9 +43,27 @@ only when (`host/replay.js`):
   that repository is listed.
 
 The same rules live in `adi-tools/packages/created-files`; change the two together.
-The host also re-reads the ledger before acting, so a button can only ever reach
-a file that is on this chat's list at that moment, and Delete all moves nothing
-unless the list is exactly the one the user confirmed.
+The host looks at a file afresh before acting on it, so a button can only ever
+reach a file that is on this chat's list at that moment, and Delete all moves
+nothing unless the list is exactly the one the user confirmed, and moves exactly
+that list.
+
+## What a change costs
+
+A chat that installs packages leaves 60,000 files and a 20 MB ledger. Reading all
+of it and looking at every file on every change kept the host busy for seconds at
+a time, and on Windows looking at a file opens it: 65,000 looks were 25 s of
+processor time (measured in Adi Tools, 2026-11-19), on the thread every extension
+of the window shares. So a chat a panel shows is followed (`follow.js`,
+`files.js`): a change reads only the lines its ledger gained and looks only at the
+files they name. A chat read for the first time answers with its newest files
+looked at, and the rest are looked at a batch at a time behind that answer; the
+dialog says it is still looking, and Copy all and Delete all wait for it. Opening
+the dialog looks again at the rows it shows (a file deleted outside any chat
+leaves no line). What git tracks is filtered again over every file only when a
+repository's index changed, so a commit still takes committed files off. Files
+are looked at through `original-fs` (`fs.js`): Electron's fs opens any `*.asar`
+as an archive, keeps it open and calls it a folder.
 
 ## The two halves
 
@@ -55,10 +73,12 @@ unless the list is exactly the one the user confirmed.
   by path so an update keeps the scroll position and focus, `dialog.js` the list
   built on the shared `__ccModal` chrome. `button-call.js` is inserted beside the
   Session history button using the same header anchor as `panel-restart-button`.
-- **host** (`host/`) - `ledger.js` replays one chat's ledger and applies the rule
-  above, `tracked.js` asks git, `actions.js` reveals, copies and trashes through
-  the editor's own APIs, so nothing is shelled out for those and neither editor
-  is branched on. `watch.js` is the folder watch, which survives the folder being
+- **host** (`host/`) - `ledger.js` keeps one followed chat per chat a panel shows
+  (`follow.js` reads what the ledger gained, `files.js` applies the rule above,
+  `replay.js` the line rules), `tracked.js` asks git, `actions.js` reveals,
+  copies and trashes through the editor's own APIs, so nothing is shelled out for
+  those and neither editor is branched on, and `acting.js` checks a path before
+  any of them. `watch.js` is the folder watch, which survives the folder being
   removed. `live.js` answers the panel's messages, keeps that one watch for the
   whole host while a panel listens, and pushes a fresh list when that chat's
   ledger changes. A panel receives the newest 300 files and the total;

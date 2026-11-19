@@ -4,11 +4,15 @@
    the bundle cannot import. What git tracks is kept per repository until its index
    changes; when git cannot answer, nothing from that repository is offered. */
 globalThis.__ccCFTracked = globalThis.__ccCFTracked || (function () {
-    var fsp = require("fs").promises;
+    var fsp = globalThis.__ccCFFs.promises;   // the folders walked are any a chat wrote in, a *.asar one included
     var path = require("path");
     var execFile = require("child_process").execFile;
-    var MAX_LISTINGS = 16;
+    var MAX_LISTINGS = 16, MAX_FOLDERS = 100000;
     var listings = new Map();
+    /* Which repository each folder is in, kept between calls: asked afresh every
+       time it cost about a second for a chat's 60,000 files (measured). */
+    var owners = new Map();
+    var moved = 0;
 
     /* Windows ignores case in a path and git does not. */
     function norm(p) { return p.replace(/\\/g, "/").toLowerCase(); }
@@ -57,6 +61,7 @@ globalThis.__ccCFTracked = globalThis.__ccCFTracked || (function () {
             var stamp = await indexStamp(root);
             var known = listings.get(root);
             if (known && known.stamp === stamp) return known.paths;
+            if (known) moved++;
             var rels = (await lsFiles(root)).split("\0").filter(Boolean);
             var paths = new Set(rels.map(function (rel) { return norm(path.join(root, rel)); }));
             if (listings.size >= MAX_LISTINGS) listings.clear();
@@ -67,10 +72,11 @@ globalThis.__ccCFTracked = globalThis.__ccCFTracked || (function () {
 
     /* The paths outside any repository, and those git does not track. */
     async function drop(paths) {
-        var known = new Map(), byRepo = new Map(), kept = [];
-        var owners = await Promise.all(paths.map(function (p) { return ownerOf(path.dirname(p), known); }));
+        if (owners.size > MAX_FOLDERS) owners.clear();
+        var byRepo = new Map(), kept = [];
+        var found = await Promise.all(paths.map(function (p) { return ownerOf(path.dirname(p), owners); }));
         paths.forEach(function (p, i) {
-            var owner = owners[i];
+            var owner = found[i];
             if (!owner) { kept.push(p); return; }
             if (owner.kind !== "repository") return;
             if (!byRepo.has(owner.root)) byRepo.set(owner.root, []);
@@ -83,5 +89,21 @@ globalThis.__ccCFTracked = globalThis.__ccCFTracked || (function () {
         return kept;
     }
 
-    return { drop: drop };
+    /* Moves whenever what git tracks may have changed: a repository's index changed
+       since it was read (a commit, an add). A caller that keeps filtered paths
+       filters them all again when it moves, and otherwise only its new ones. */
+    async function version() {
+        await Promise.all(Array.from(listings).map(async function (kv) {
+            if ((await indexStamp(kv[0]).catch(function () { return null; })) === kv[1].stamp) return;
+            listings.delete(kv[0]);
+            moved++;
+        }));
+        return moved;
+    }
+
+    /* Look again at which folders are repositories (one may have been made since):
+       only the paths filtered from now on see it. */
+    function forget() { owners.clear(); }
+
+    return { drop: drop, version: version, forget: forget };
 })();

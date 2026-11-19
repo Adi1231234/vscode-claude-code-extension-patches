@@ -21,7 +21,7 @@ const vscodeStub = {
 };
 const load = (name) => new Function('require', fs.readFileSync(path.join(__dirname, '..', 'host', name), 'utf8'))(
   (m) => (m === 'vscode' ? vscodeStub : require(m)));
-['tracked.js', 'replay.js', 'ledger.js', 'actions.js', 'watch.js', 'live.js'].forEach(load);
+['fs.js', 'tracked.js', 'replay.js', 'follow.js', 'files.js', 'ledger.js', 'actions.js', 'acting.js', 'watch.js', 'live.js'].forEach(load);
 
 const touch = (...parts) => {
   const p = path.join(root, ...parts);

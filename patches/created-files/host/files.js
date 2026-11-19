@@ -1,0 +1,85 @@
+/* One chat's created files, kept up to date as its ledger grows. The same as
+   adi-tools' packages/created-files/chatFiles.mjs; change the two together.
+
+   Each file is looked at on disk once: when a ledger line is about it, or, for a
+   ledger read from its start, newest first as far as asked (verify), so the first
+   rows show long before the 60,000th file is looked at. On Windows a look opens the
+   file: 65,000 of them were 25 s of processor time (measured 2026-11-19), on the
+   thread every extension shares. A file deleted outside any chat leaves no line:
+   the caller looks at given files again (paths). What git tracks is filtered again
+   over every file only when its answers may have changed (a commit). */
+globalThis.__ccCFFiles = globalThis.__ccCFFiles || (function () {
+    var fsp = globalThis.__ccCFFs.promises;
+    var R = globalThis.__ccCFReplay;
+    var T = globalThis.__ccCFTracked;
+    var F = globalThis.__ccCFFollow;
+    var STAT_BATCH = 64;
+
+    function newestFirst(a, b) { return a.t === b.t ? 0 : a.t < b.t ? 1 : -1; }
+
+    /* The events whose file is on disk and still the one the chat made. */
+    async function onDisk(events, start) {
+        var found = new Map(), wanted = events.filter(function (e) { return !R.isInternal(e.path); });
+        for (var i = 0; i < wanted.length; i += STAT_BATCH) {
+            var batch = wanted.slice(i, i + STAT_BATCH);
+            var stats = await Promise.all(batch.map(function (e) {
+                return fsp.stat(e.path, { bigint: true }).catch(function () { return null; });
+            }));
+            batch.forEach(function (e, j) { if (stats[j] && R.stillTheChats(e, stats[j], start)) found.set(e.path.toLowerCase(), e); });
+        }
+        return found;
+    }
+
+    function chat(file) {
+        var ledger = F.ledger(file), read = false, version = null, queue = Promise.resolve();
+        var unknown = [], seen = new Map(), rows = new Map(), sorted = null;
+        var me = {
+            files: function () { return sorted || (sorted = Array.from(rows.values()).sort(newestFirst)); },
+            gaps: function () { return ledger.replay.gaps; },
+            pending: function () { return unknown.length; },
+            has: function (p) { return rows.has(String(p).toLowerCase()); }
+        };
+
+        function startOver(alive) {
+            var before = new Set(seen.keys());
+            seen.clear();
+            unknown = Array.from(alive.entries()).sort(function (a, b) { return newestFirst(b[1], a[1]); })
+                .map(function (kv) { return kv[0]; });
+            return before;   // so whatever was listed is taken off
+        }
+
+        async function refresh(paths, verify) {
+            var touched = await ledger.read(), alive = ledger.replay.alive;
+            var keys = touched && read ? touched : startOver(alive);
+            read = true;
+            paths.forEach(function (p) { keys.add(String(p).toLowerCase()); });
+            while (verify-- > 0 && unknown.length) keys.add(unknown.pop());
+            var looked = await onDisk(Array.from(keys).map(function (k) { return alive.get(k); }).filter(Boolean), ledger.replay.start);
+            keys.forEach(function (k) { if (looked.has(k)) seen.set(k, looked.get(k)); else seen.delete(k); });
+            var v = await T.version();
+            var scope = v === version ? keys : new Set(Array.from(keys).concat(Array.from(seen.keys())));
+            version = v;
+            var candidates = Array.from(scope).filter(function (k) { return seen.has(k); }).map(function (k) { return seen.get(k).path; });
+            var allowed = new Set((await T.drop(candidates)).map(function (p) { return p.toLowerCase(); }));
+            var changed = false;
+            scope.forEach(function (k) {
+                var e = allowed.has(k) ? seen.get(k) : undefined;
+                if (e ? rows.get(k) !== e : rows.has(k)) changed = true;
+                if (e) rows.set(k, e); else rows.delete(k);
+            });
+            if (changed) sorted = null;
+            return changed;
+        }
+
+        /* Calls run one after another: two at once would read the same lines twice. */
+        me.refresh = function (opts) {
+            var o = opts || {};
+            var run = queue.then(function () { return refresh(o.paths || [], o.verify === undefined ? Infinity : o.verify); });
+            queue = run.catch(function () {});
+            return run;
+        };
+        return me;
+    }
+
+    return { chat: chat };
+})();

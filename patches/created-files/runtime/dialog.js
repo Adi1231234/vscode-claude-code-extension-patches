@@ -33,7 +33,7 @@
         }
         b.onclick = function () {
             var s = state();
-            if (!s.total || sentAt >= 0) return;
+            if (!s.total || s.checking || sentAt >= 0) return;
             if (armedFor !== s.list) {
                 armedFor = s.list;
                 armedAt = Date.now();
@@ -55,10 +55,11 @@
             sync: function (s) {
                 if (sentAt >= 0 && s.reports !== sentAt) {
                     sentAt = -1;
-                    b.disabled = false;
                     b.textContent = DELETE_ALL;
                 }
-                if (armedFor && armedFor !== s.list) disarm();
+                // "Delete all" waits until every file was looked at: it acts on one whole list.
+                b.disabled = sentAt >= 0 || s.checking > 0;
+                if (armedFor && (armedFor !== s.list || s.checking)) disarm();
             }
         };
     }
@@ -80,7 +81,7 @@
         scroll.appendChild(info);
         var sync = window.__ccCFRows.list(rowsEl, send);
         var copy = footBtn(COPY, "cc-cf-copy");
-        copy.onclick = function () { if (state().total) send({ op: "copyAll" }); };
+        copy.onclick = function () { if (state().total && !state().checking) send({ op: "copyAll" }); };
         copy.onmouseleave = copy.onblur = function () { copy.textContent = COPY; };
         var deleteAll = deleteAllButton();
 
@@ -98,9 +99,11 @@
             if (focusInRow && !rowsEl.contains(document.activeElement)) copy.focus();   // its row just left
             deleteAll.sync(s);
             warn.textContent = note(s);
-            info.textContent = !s.total ? "No files from this chat are still on disk." :
+            copy.disabled = s.checking > 0;
+            info.textContent = s.checking ? "Still looking at " + plural(s.checking, "more file", "more files") + " on disk. Copy all and Delete all wait for that." :
+                !s.total ? "No files from this chat are still on disk." :
                 s.total > s.files.length ? "Showing the newest " + s.files.length + ". Copy all and Delete all cover every file." : "";
-            sh.sub.textContent = plural(s.total, "file", "files") + " still on disk";
+            sh.sub.textContent = plural(s.total, "file", "files") + " still on disk" + (s.checking ? ", checking more" : "");
             if (s.copied) copy.textContent = "Copied " + plural(s.copied, "path", "paths");
         }
 

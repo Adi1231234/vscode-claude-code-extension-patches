@@ -52,7 +52,7 @@ function Invoke-Patch {
         '__JSX__' = '${1}'; '__BUTTON__' = '${2}'
     })).Trim()
 
-    $hostJs = (@('tracked.js', 'replay.js', 'ledger.js', 'actions.js', 'watch.js', 'live.js') |
+    $hostJs = (@('fs.js', 'tracked.js', 'replay.js', 'follow.js', 'files.js', 'ledger.js', 'actions.js', 'acting.js', 'watch.js', 'live.js') |
         ForEach-Object { Read-Text (Join-Path $PSScriptRoot "host/$_") }) -join "`n"
 
     Write-Text $Ctx.WebJs ("/* CREATEDFILES */`n" + $runtime + "`n" + (Set-MatchText $wc $btn[0] $btn[0].Result($call)))

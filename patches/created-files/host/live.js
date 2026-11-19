@@ -5,11 +5,12 @@
    about each session id, and open only while a panel is listening. A panel
    leaves when its view is disposed. One read per chat runs at a time, and the
    list a panel receives is capped: a single npm install is tens of thousands of
-   files. Acting on a path is checked against a fresh read of that chat's ledger. */
+   files. A chat read for the first time answers with its newest files looked at,
+   and the rest are looked at a batch at a time behind that answer. Acting on a
+   path is checked against a fresh look at that path. */
 globalThis.__ccCF = globalThis.__ccCF || (function () {
     var L = globalThis.__ccCFLedger;
-    var A = globalThis.__ccCFActions;
-    var LIST_CAP = 300, SETTLE_MS = 500;
+    var LIST_CAP = 300, SETTLE_MS = 500, FIRST_LOOK = 2 * LIST_CAP, BATCH = 2000;
     var byId = new Map(), ofView = new Map(), known = new WeakSet();
     var flights = new Map(), timers = new Map(), latest = new Map();
     var wasRecording = false;
@@ -19,26 +20,41 @@ globalThis.__ccCF = globalThis.__ccCF || (function () {
         if (!data || !views) return;
         var msg = Object.assign({
             type: "ccCFData", sessionId: id, files: data.files.slice(0, LIST_CAP), total: data.files.length,
-            incomplete: data.incomplete, running: wasRecording, list: data.list
+            checking: data.checking, incomplete: data.incomplete, running: wasRecording, list: data.list
         }, extra);
         views.forEach(function (wv) {
             try { Promise.resolve(wv.postMessage(msg)).catch(function () {}); } catch (e) {}
         });
     }
 
-    function refresh(id, extra) {
-        var f = flights.get(id);
-        if (f) { f.again = true; f.extra = Object.assign(f.extra || {}, extra); return; }
-        f = { again: false, extra: null };
+    /* opts.verify: files not looked at yet to look at now; opts.paths: files to look
+       at again (just acted on); opts.shown: the rows the panel shows, as well (a file
+       may have gone without its ledger changing). */
+    function refresh(id, extra, opts) {
+        var o = opts || {}, f = flights.get(id);
+        if (f) {
+            f.again = true;
+            f.extra = Object.assign(f.extra || {}, extra);
+            f.verify = Math.max(f.verify, o.verify || 0);
+            f.paths = f.paths.concat(o.paths || []);
+            f.shown = f.shown || !!o.shown;
+            return;
+        }
+        f = { again: false, extra: null, verify: 0, paths: [], shown: false };
         flights.set(id, f);
         syncRecording();
-        L.read(id).then(function (data) {
+        var before = latest.get(id);
+        var paths = (o.paths || []).concat(o.shown && before ? before.files.slice(0, LIST_CAP).map(function (x) { return x.path; }) : []);
+        L.read(id, { verify: before ? o.verify : FIRST_LOOK, paths: paths }).then(function (data) {
             if (!byId.has(id)) return;   // its last panel left while this was reading
             latest.set(id, data);
             deliver(id, extra);
+            if (data.checking > 0) { f.again = true; f.verify = Math.max(f.verify, BATCH); }
         }, function () {}).then(function () {
             flights.delete(id);
-            if (f.again && byId.has(id)) refresh(id, f.extra);
+            if (f.again) setImmediate(function () {
+                if (byId.has(id)) refresh(id, f.extra, { verify: f.verify, paths: f.paths, shown: f.shown });
+            });
         });
     }
 
@@ -71,6 +87,7 @@ globalThis.__ccCF = globalThis.__ccCF || (function () {
         if (views.size) return;
         byId.delete(id);
         latest.delete(id);
+        L.forget(id);
         if (!byId.size) folder.stop();
     }
 
@@ -89,43 +106,18 @@ globalThis.__ccCF = globalThis.__ccCF || (function () {
         refresh(id);
     }
 
-    /* Only what this chat's ledger lists right now can be acted on. */
-    function act(id, wanted, run) {
-        L.read(id).then(function (data) {
-            var listed = new Map(data.files.map(function (f) { return [f.path.toLowerCase(), f.path]; }));
-            var paths = wanted === null ? Array.from(listed.values()) :
-                wanted.map(function (p) { return listed.get(String(p).toLowerCase()); }).filter(Boolean);
-            return paths.length ? run(paths) : undefined;
-        }).catch(function () {});
-    }
-
-    function remove(id, wanted) {
-        act(id, wanted, function (paths) {
-            return A.trash(paths).then(function (failed) { refresh(id, { failed: failed }); });
-        });
-    }
-
-    /* The user confirmed one exact list. If the chat has changed it since, nothing is
-       moved: the fresh list goes back to the dialog, which asks again. */
-    function removeAll(id, confirmed) {
-        L.read(id).then(function (data) {
-            if (data.list !== confirmed) { refresh(id, { failed: 0 }); return; }
-            remove(id, null);
-        }).catch(function () { refresh(id, { failed: 0 }); });
-    }
+    var acting = globalThis.__ccCFActing(refresh, deliver);
 
     function handle(msg, view) {
         if (!msg || msg.type !== "ccCF" || !view) return false;
         var id = ofView.get(view.webview);
         if (msg.op === "subscribe") subscribe(view, msg.sessionId);
         else if (!id) return true;
-        else if (msg.op === "refresh") refresh(id);
-        else if (msg.op === "reveal") act(id, [msg.path], function (paths) { A.reveal(paths[0]); });
-        else if (msg.op === "copyAll") act(id, null, function (paths) {
-            return A.copy(paths).then(function () { deliver(id, { copied: paths.length }); });
-        });
-        else if (msg.op === "delete") remove(id, [msg.path]);
-        else if (msg.op === "deleteAll") removeAll(id, msg.list);
+        else if (msg.op === "refresh") refresh(id, null, { shown: true });
+        else if (msg.op === "reveal") acting.reveal(id, msg.path);
+        else if (msg.op === "copyAll") acting.copyAll(id);
+        else if (msg.op === "delete") acting.remove(id, msg.path);
+        else if (msg.op === "deleteAll") acting.removeAll(id, msg.list);
         return true;
     }
 
