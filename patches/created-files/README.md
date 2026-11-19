@@ -23,30 +23,48 @@ Ledger location and line contract (shared with the Adi Tools tab, owned by
 
 One JSON object per line: `op` of `new` / `rename` (the file appeared; rename's
 `path` is the final name) / `delete` / `gap` (recording was off across a window,
-so the list may be incomplete). A reader replays the lines, then keeps only paths
-that still exist on disk.
+so the list may be incomplete). A reader replays the lines, ignoring case.
+
+## What is listed
+
+A ledger holds everything the chat's processes made, and most of that is not
+for deleting. Measured on real ledgers (2026-11-19), 96 of 181 existing entries
+were folders, git's objects or the CLI's own files, the chat's transcript among
+them. So the list is only regular files that still exist, and never:
+
+- anything inside `.git`, or a worktree's `.git` link file;
+- anything under `~/.claude`, or the CLI's temp folder apart from a chat's
+  `scratchpad`;
+- files git tracks. A path git could not answer about counts as tracked.
+
+The same rule lives in `adi-tools/packages/created-files`; change the two together.
+The host also re-reads the ledger before acting, so a button can only ever reach
+a file that is on this chat's list at that moment.
 
 ## The two halves
 
 - **webview** (`runtime/`) - `icon.js` the glyph, `link.js` the line to the host,
   `state.js` the live badge (a push from the host, re-applied through `__ccDom`
-  after the app re-renders the header, never a poll), `dialog.js` the list built
-  on the shared `__ccModal` chrome. `button-call.js` is inserted beside the
+  after the app re-renders the header, never a poll), `rows.js` the rows, matched
+  by path so an update keeps the scroll position and focus, `dialog.js` the list
+  built on the shared `__ccModal` chrome. `button-call.js` is inserted beside the
   Session history button using the same header anchor as `panel-restart-button`.
-- **host** (`host/`) - `ledger.js` reads and replays one chat's ledger and keeps
-  only existing files; `live.js` answers the panel's messages, holds one
-  directory watcher for the whole host fanned out to the panels that asked about
-  each session id, and pushes a fresh list whenever that chat's ledger changes.
-  Reveal and delete go through the editor's own `revealFileInOS` and a trash
-  delete (`workspace.fs.delete` with `useTrash`), so nothing is shelled out and
-  neither editor is branched on.
+- **host** (`host/`) - `ledger.js` replays one chat's ledger and applies the rule
+  above, `tracked.js` asks git, `actions.js` reveals, copies and trashes through
+  the editor's own APIs, so nothing is shelled out for those and neither editor
+  is branched on. `live.js` answers the panel's messages, holds one directory
+  watcher for the whole host while a panel listens, and pushes a fresh list when
+  that chat's ledger changes. A panel receives the newest 300 files and the total;
+  Copy all and Delete all work on the host, so they cover every file.
 
 ## Visibility
 
-The icon appears only when the recorder is running for this chat **or** there is
-at least one still-existing file to show; otherwise it is hidden. The badge shows
-the count (capped at `999+`); it turns amber when the ledger carries a `gap`, so
-the count is known to be a lower bound.
+The icon appears only when the recorder is running **or** there is at least one
+file to show; otherwise it is hidden. The badge shows the count (capped at `999+`).
+When part of the chat went unwatched the dialog says the list may be incomplete.
+
+Delete all asks once before it acts: the first press only names how many files it
+will move to the Recycle Bin.
 
 ## Why it is a patch and not a mod
 

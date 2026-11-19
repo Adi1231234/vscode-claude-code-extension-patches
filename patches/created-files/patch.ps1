@@ -44,7 +44,7 @@ function Invoke-Patch {
     # modal/copy before the dialog.
     $libs = @('ccStore.js', 'ccDom.js', 'ccWatch.js', 'ccSession.js', 'ccModal.js', 'ccCopyText.js') |
         ForEach-Object { Get-LibJsPath $_ }
-    $mine = @('icon.js', 'link.js', 'state.js', 'dialog.js') |
+    $mine = @('icon.js', 'link.js', 'state.js', 'rows.js', 'dialog.js') |
         ForEach-Object { Join-Path $PSScriptRoot "runtime/$_" }
     $runtime = (($libs + $mine) | ForEach-Object { Read-Text $_ }) -join "`n"
 
@@ -52,12 +52,14 @@ function Invoke-Patch {
         '__JSX__' = '${1}'; '__BUTTON__' = '${2}'
     })).Trim()
 
-    $hostJs = (Read-Text (Join-Path $PSScriptRoot 'host/ledger.js')) + "`n" +
-              (Read-Text (Join-Path $PSScriptRoot 'host/live.js'))
+    $hostJs = (@('tracked.js', 'ledger.js', 'actions.js', 'live.js') |
+        ForEach-Object { Read-Text (Join-Path $PSScriptRoot "host/$_") }) -join "`n"
 
     Write-Text $Ctx.WebJs ("/* CREATEDFILES */`n" + $runtime + "`n" + (Set-MatchText $wc $btn[0] $btn[0].Result($call)))
     Write-Text $Ctx.Js ("/* CREATEDFILESHOST */`n" + $hostJs.Trim() + "`n" + $hooked)
     Write-Ok 'created-files icon + dialog in the panel header'
 
+    # The dialog chrome, which otherwise arrives only with prompt-queue.
+    Add-StyleBlock $Ctx (Get-LibCssPath 'ccModal.css') '/* QMODAL */' 'shared dialog CSS'
     Add-StyleBlock $Ctx (Join-Path $PSScriptRoot 'created-files.css') '/* CREATEDFILESCSS */' 'created-files CSS'
 }

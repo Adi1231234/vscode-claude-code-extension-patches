@@ -39,9 +39,12 @@
    colour rather than recolouring to whatever --app-warning-foreground happens to
    be - it is grey in the default theme, which would read as "disabled". */
 
-/* The dialog list: the app's own list metrics (4px 8px rows, 2px gaps). */
+/* The dialog list: the app's own list metrics (4px 8px rows, 2px gaps). It takes
+   the room the box has rather than a share of the viewport: vh ignores the zoom
+   patch, so at zoom 2 a 52vh list pushed the buttons out of the panel. */
 .cc-cf-list {
-    max-height: 52vh;
+    flex: 1 1 auto;
+    min-height: 0;
     overflow-y: auto;
     margin-top: var(--app-spacing-small, 4px);
 }
@@ -99,6 +102,7 @@
     padding: var(--app-spacing-small, 4px) var(--app-spacing-medium, 8px);
 }
 .cc-cf-warn { color: var(--app-warning-foreground, var(--app-secondary-foreground)); }
+.cc-cf-warn:empty, .cc-cf-empty-note:empty { display: none; }
 
 /* Footer buttons, in the shared dialog's foot. */
 .cc-cf-foot-btn {
@@ -111,4 +115,5 @@
     cursor: pointer;
 }
 .cc-cf-foot-btn:hover { background: var(--app-list-hover-background, rgba(255, 255, 255, 0.06)); }
-.cc-cf-delall:hover { color: var(--app-error-foreground, var(--app-primary-foreground)); }
+.cc-cf-delall:hover, .cc-cf-delall.cc-cf-armed { color: var(--app-error-foreground, var(--app-primary-foreground)); }
+.cc-cf-delall.cc-cf-armed { border-color: var(--app-error-foreground, var(--app-widget-border, transparent)); }

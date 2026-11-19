@@ -69,7 +69,10 @@ it and walk from it to the chat. Proven end to end 2026-11-19:
 
 One JSON object per line: `op` of `new` / `rename` (file appeared; rename's
 `path` is the final name) / `delete` / `gap` (recording was off across a window).
-A reader replays the lines then keeps only paths that still exist on disk.
+A reader replays the lines, ignoring case, then keeps only regular files that still
+exist and are neither internal (`.git`, `~/.claude`, the CLI's temp files) nor
+tracked by git. The ledger holds all of those too, so listing it unfiltered offers
+a repository's objects and the chat's own transcript for deletion.
 `status.json` carries `running`, `updatedAt` (fresh within ~2 s of activity,
 never while idle, so a reader can tell it is alive), `lostEvents`, `gaps`.
 
@@ -84,12 +87,9 @@ never while idle, so a reader can tell it is alive), `lostEvents`, `gaps`.
 
 ## Status
 
-- Phase 0: done, verified end to end, draft PR adi-tools #48. One shutdown-crash
-  bug found and fixed (cache the lost-event count before disposing the session).
-- Phase 2: assigned, in progress.
-- Phase 3 (this repo): built and verified against the real 2.1.327 bundle - all
-  three guards land, both bundles parse, idempotent, host hook installs at all
-  three chat surfaces. Live visual test pending.
+- Phase 0 and Phase 2: adi-tools PR #49.
+- Phase 3 (this repo): verified against the real 2.1.327 bundle and live in the lab
+  against a synthetic ledger (`tests/host.test.js` covers the host half).
 
 ### A pre-existing break found and fixed along the way
 

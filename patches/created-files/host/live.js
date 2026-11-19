@@ -2,91 +2,129 @@
    pushes a fresh list whenever that chat's ledger changes.
 
    One directory watcher for the whole host, fanned out to the panels that asked
-   about each session id - so opening ten panels does not open ten watchers.
-   Reveal and delete go through the editor's own APIs (revealFileInOS, trash
-   delete), so nothing is shelled out and neither editor is branched on. */
+   about each session id, and open only while a panel is listening. A panel
+   leaves when its view is disposed. One read per chat runs at a time, and the
+   list a panel receives is capped: a single npm install is tens of thousands of
+   files. Acting on a path is checked against a fresh read of that chat's ledger. */
 globalThis.__ccCF = globalThis.__ccCF || (function () {
     var fs = require("fs");
-    var path = require("path");
     var L = globalThis.__ccCFLedger;
-    var byId = new Map();     // sessionId -> Set<webview>
-    var ofView = new Map();   // webview -> sessionId
-    var timers = new Map();   // sessionId -> debounce timer
-    var watcher = null, rearm = null;
+    var A = globalThis.__ccCFActions;
+    var LIST_CAP = 300, SETTLE_MS = 500;
+    var byId = new Map(), ofView = new Map(), known = new WeakSet();
+    var flights = new Map(), timers = new Map(), latest = new Map();
+    var watcher = null, wasRecording = false;
 
-    function vscode() { try { return require("vscode"); } catch (e) { return null; } }
-
-    function push(sessionId) {
-        var views = byId.get(sessionId);
-        if (!views || !views.size) return;
-        var data = L.read(sessionId);
-        var msg = { type: "ccCFData", sessionId: sessionId, files: data.files, gaps: data.gaps, status: L.status() };
-        views.forEach(function (wv) { try { wv.postMessage(msg); } catch (e) { drop(wv); } });
+    function deliver(id, extra) {
+        var data = latest.get(id), views = byId.get(id);
+        if (!data || !views) return;
+        var msg = Object.assign({
+            type: "ccCFData", sessionId: id, files: data.files.slice(0, LIST_CAP), total: data.files.length,
+            incomplete: data.incomplete, running: wasRecording
+        }, extra);
+        views.forEach(function (wv) {
+            try { Promise.resolve(wv.postMessage(msg)).catch(function () {}); } catch (e) {}
+        });
     }
 
-    function bump(sessionId) {
-        if (timers.has(sessionId)) return;
-        timers.set(sessionId, setTimeout(function () { timers.delete(sessionId); push(sessionId); }, 200));
+    function refresh(id, extra) {
+        var f = flights.get(id);
+        if (f) { f.again = true; f.extra = Object.assign(f.extra || {}, extra); return; }
+        f = { again: false, extra: null };
+        flights.set(id, f);
+        wasRecording = L.recording();
+        L.read(id).then(function (data) { latest.set(id, data); deliver(id, extra); }, function () {}).then(function () {
+            flights.delete(id);
+            if (f.again && byId.has(id)) refresh(id, f.extra);
+        });
     }
 
+    function settle(id) {
+        if (timers.has(id)) return;
+        timers.set(id, setTimeout(function () { timers.delete(id); if (byId.has(id)) refresh(id); }, SETTLE_MS));
+    }
+
+    function onStatus() {
+        var now = L.recording();
+        if (now === wasRecording) return;
+        wasRecording = now;
+        byId.forEach(function (_v, id) { deliver(id); });
+    }
+
+    function closeWatch() {
+        if (watcher) { try { watcher.close(); } catch (e) {} }
+        watcher = null;
+    }
+
+    /* The folder is made here so the watch can attach before the recorder's first
+       run; a watch whose folder was removed reports an error and is made anew. */
     function ensureWatch() {
         if (watcher) return;
         try {
+            fs.mkdirSync(L.DIR, { recursive: true });
             watcher = fs.watch(L.DIR, function (_evt, name) {
-                if (name && name.slice(-6) === ".jsonl") bump(name.slice(0, -6));
-                else if (name === "status.json") byId.forEach(function (_v, id) { bump(id); });
+                if (name === "status.json") onStatus();
+                else if (name && name.slice(-6) === ".jsonl") settle(name.slice(0, -6));
             });
-            watcher.on("error", reWatchLater);
-        } catch (e) { reWatchLater(); }
+            watcher.on("error", function () { closeWatch(); ensureWatch(); });
+        } catch (e) { closeWatch(); }
     }
 
-    // The ledger dir appears only once the recorder has run; until then, retry.
-    function reWatchLater() {
-        if (watcher) { try { watcher.close(); } catch (e) {} watcher = null; }
-        if (rearm) return;
-        rearm = setTimeout(function () { rearm = null; if (byId.size) { ensureWatch(); byId.forEach(function (_v, id) { push(id); }); } }, 4000);
-    }
-
-    function drop(wv) {
+    function leave(wv) {
         var id = ofView.get(wv);
         ofView.delete(wv);
-        if (id && byId.has(id)) { byId.get(id).delete(wv); if (!byId.get(id).size) byId.delete(id); }
+        var views = id && byId.get(id);
+        if (!views) return;
+        views.delete(wv);
+        if (views.size) return;
+        byId.delete(id);
+        latest.delete(id);
+        if (!byId.size) closeWatch();
     }
 
-    function subscribe(wv, sessionId) {
-        var prev = ofView.get(wv);
-        if (prev === sessionId) { push(sessionId); return; }
-        if (prev && byId.has(prev)) { byId.get(prev).delete(wv); if (!byId.get(prev).size) byId.delete(prev); }
-        if (!sessionId) { ofView.delete(wv); return; }
-        ofView.set(wv, sessionId);
-        if (!byId.has(sessionId)) byId.set(sessionId, new Set());
-        byId.get(sessionId).add(wv);
+    function subscribe(view, id) {
+        var wv = view.webview;
+        if (!known.has(view)) {
+            known.add(view);
+            view.onDidDispose(function () { leave(wv); });
+        }
+        if (ofView.get(wv) !== id) leave(wv);
+        if (typeof id !== "string" || !/^[\w-]{1,80}$/.test(id)) return;
+        ofView.set(wv, id);
+        if (!byId.has(id)) byId.set(id, new Set());
+        byId.get(id).add(wv);
         ensureWatch();
-        push(sessionId);
+        refresh(id);
     }
 
-    function reveal(p) { var v = vscode(); if (v) v.commands.executeCommand("revealFileInOS", v.Uri.file(p)); }
-
-    function trash(paths, sessionId) {
-        var v = vscode();
-        if (!v) return;
-        var next = paths.slice();
-        (function one() {
-            if (!next.length) { push(sessionId); return; }
-            var p = next.shift();
-            Promise.resolve(v.workspace.fs.delete(v.Uri.file(p), { useTrash: true }))
-                .then(function () {}, function () {})
-                .then(one);
-        })();
+    /* Only what this chat's ledger lists right now can be acted on. */
+    function act(id, wanted, run) {
+        L.read(id).then(function (data) {
+            var listed = new Map(data.files.map(function (f) { return [f.path.toLowerCase(), f.path]; }));
+            var paths = wanted === null ? Array.from(listed.values()) :
+                wanted.map(function (p) { return listed.get(String(p).toLowerCase()); }).filter(Boolean);
+            return paths.length ? run(paths) : undefined;
+        }).catch(function () {});
     }
 
-    function handle(msg, webview) {
-        if (!msg || msg.type !== "ccCF" || !webview) return false;
-        if (msg.op === "subscribe") subscribe(webview, msg.sessionId);
-        else if (msg.op === "refresh") push(msg.sessionId || ofView.get(webview));
-        else if (msg.op === "reveal") reveal(msg.path);
-        else if (msg.op === "delete") trash(msg.paths || [], msg.sessionId || ofView.get(webview));
-        else return false;
+    function remove(id, wanted) {
+        act(id, wanted, function (paths) {
+            return A.trash(paths).then(function (failed) { refresh(id, { failed: failed }); });
+        });
+    }
+
+    function handle(msg, view) {
+        if (!msg || msg.type !== "ccCF" || !view) return false;
+        var id = ofView.get(view.webview);
+        if (msg.op === "subscribe") subscribe(view, msg.sessionId);
+        else if (!id) return true;
+        else if (msg.op === "refresh") refresh(id);
+        else if (msg.op === "reveal") act(id, [msg.path], function (paths) { A.reveal(paths[0]); });
+        else if (msg.op === "copyAll") act(id, null, function (paths) {
+            return A.copy(paths).then(function () { deliver(id, { copied: paths.length }); });
+        });
+        else if (msg.op === "delete") remove(id, [msg.path]);
+        else if (msg.op === "deleteAll") remove(id, null);
         return true;
     }
 

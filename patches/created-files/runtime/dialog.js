@@ -7,59 +7,12 @@
    list and __ccCFRender re-draws the open dialog, so the row leaves on its own
    rather than being removed by hand. */
 (function () {
-    function el(tag, cls, text) {
-        var x = document.createElement(tag);
-        if (cls) x.className = cls;
-        if (text != null) x.textContent = text;
-        return x;
-    }
+    var el = window.__ccCFRows.el;
+    var COPY = "Copy all paths", DELETE_ALL = "Delete all";
 
-    function iconBtn(cls, label, svg) {
-        var b = el("button", "cc-cf-act " + cls);
-        b.type = "button";
-        b.title = label;
-        b.setAttribute("aria-label", label);
-        b.innerHTML = svg;
-        return b;
-    }
-
-    var REVEAL = "<svg width='15' height='15' viewBox='0 0 20 20' fill='none'><path d='M3 7 A1 1 0 0 1 4 6 H8 L9.5 7.5 H16 A1 1 0 0 1 17 8.5 V15 A1 1 0 0 1 16 16 H4 A1 1 0 0 1 3 15 Z' stroke='currentColor' stroke-width='1.3' stroke-linejoin='round'/></svg>";
-    var TRASH = "<svg width='15' height='15' viewBox='0 0 20 20' fill='none'><path d='M5 6 H15 M8 6 V4.5 H12 V6 M6.5 6 V15.5 A1 1 0 0 0 7.5 16.5 H12.5 A1 1 0 0 0 13.5 15.5 V6 M9 9 V13.5 M11 9 V13.5' stroke='currentColor' stroke-width='1.3' stroke-linecap='round' stroke-linejoin='round'/></svg>";
-
-    var sh = null, listEl = null;
-
-    function row(f) {
-        var r = el("div", "cc-cf-row");
-        var text = el("div", "cc-cf-text");
-        text.appendChild(el("div", "cc-cf-name", f.name));
-        text.appendChild(el("div", "cc-cf-path", f.path));
-        r.appendChild(text);
-        var reveal = iconBtn("cc-cf-reveal", "Show in file explorer", REVEAL);
-        reveal.onclick = function () { window.__ccCFState.send({ type: "ccCF", op: "reveal", path: f.path }); };
-        var del = iconBtn("cc-cf-del", "Delete to Recycle Bin", TRASH);
-        del.onclick = function () { sendDelete([f.path]); };
-        r.appendChild(reveal);
-        r.appendChild(del);
-        return r;
-    }
-
-    function sendDelete(paths) {
-        var s = window.__ccCFState.get();
-        window.__ccCFState.send({ type: "ccCF", op: "delete", paths: paths, sessionId: s.sid });
-    }
-
-    function render() {
-        if (!sh || !listEl) return;
-        var s = window.__ccCFState.get();
-        listEl.textContent = "";
-        if (s.gaps.length) listEl.appendChild(el("div", "cc-cf-warn", "Recording was off for a while - this list may be incomplete."));
-        if (!s.files.length) {
-            listEl.appendChild(el("div", "cc-cf-empty-note", "No files from this chat are still on disk."));
-        } else {
-            for (var i = 0; i < s.files.length; i++) listEl.appendChild(row(s.files[i]));
-        }
-        sh.sub.textContent = s.files.length + (s.files.length === 1 ? " file still on disk" : " files still on disk");
-    }
+    function state() { return window.__ccCFState.get(); }
+    function send(msg) { window.__ccCFState.send(msg); }
+    function plural(n, one, many) { return n + " " + (n === 1 ? one : many); }
 
     function footBtn(label, cls) {
         var b = el("button", "cc-cf-foot-btn " + cls, label);
@@ -67,30 +20,76 @@
         return b;
     }
 
+    /* The first press only asks: it can move thousands of files at once. The
+       question names a number, so it lapses the moment that number changes. */
+    function deleteAllButton() {
+        var b = footBtn(DELETE_ALL, "cc-cf-delall"), armedFor = 0;
+        function disarm() {
+            armedFor = 0;
+            b.textContent = DELETE_ALL;
+            b.classList.remove("cc-cf-armed");
+        }
+        b.onclick = function () {
+            var n = state().total;
+            if (!n) return;
+            if (armedFor === n) { disarm(); send({ op: "deleteAll" }); return; }
+            armedFor = n;
+            b.textContent = "Delete " + plural(n, "file", "files") + "?";
+            b.classList.add("cc-cf-armed");
+        };
+        b.onblur = disarm;
+        b.onmouseleave = disarm;
+        return { el: b, sync: function (n) { if (armedFor && armedFor !== n) disarm(); } };
+    }
+
+    function note(s) {
+        if (s.failed) return plural(s.failed, "file", "files") + " could not be moved to the Recycle Bin.";
+        if (s.incomplete) return "Recording was off for a while - this list may be incomplete.";
+        return "";
+    }
+
     function open() {
         if (!window.__ccModal) return;
-        sh = window.__ccModal({ title: "Files this chat created", sub: "", icon: window.__ccCFIcon(), cls: "cc-cf-dialog" });
-        if (window.__ccDom) window.__ccDom.own(sh.ov);
-        listEl = el("div", "cc-cf-list");
-        sh.box.appendChild(listEl);
-        var copy = footBtn("Copy all paths", "cc-cf-copy");
-        copy.onclick = function () {
-            var s = window.__ccCFState.get();
-            var text = s.files.map(function (f) { return f.path; }).join(String.fromCharCode(10));
-            if (text && window.__ccCopyText) window.__ccCopyText(text);
-        };
-        var delAll = footBtn("Delete all", "cc-cf-delall");
-        delAll.onclick = function () {
-            var s = window.__ccCFState.get();
-            if (s.files.length) sendDelete(s.files.map(function (f) { return f.path; }));
-        };
+        var scroll = el("div", "cc-cf-list");
+        var warn = el("div", "cc-cf-warn");
+        var rowsEl = el("div", "cc-cf-rows");
+        var info = el("div", "cc-cf-empty-note");
+        scroll.appendChild(warn);
+        scroll.appendChild(rowsEl);
+        scroll.appendChild(info);
+        var sync = window.__ccCFRows.list(rowsEl, send);
+        var copy = footBtn(COPY, "cc-cf-copy");
+        copy.onclick = function () { if (state().total) send({ op: "copyAll" }); };
+        copy.onmouseleave = function () { copy.textContent = COPY; };
+        var deleteAll = deleteAllButton();
+
+        var sh = window.__ccModal({
+            title: "Files this chat created",
+            icon: window.__ccCFIcon(),
+            cls: "cc-cf-dialog",
+            onClose: function () { window.__ccCFRender = null; }
+        });
+
+        function render() {
+            var s = state();
+            sync(s.files);
+            deleteAll.sync(s.total);
+            warn.textContent = note(s);
+            info.textContent = !s.total ? "No files from this chat are still on disk." :
+                s.total > s.files.length ? "Showing the newest " + s.files.length + ". Copy all and Delete all cover every file." : "";
+            sh.sub.textContent = plural(s.total, "file", "files") + " still on disk";
+            if (s.copied) copy.textContent = "Copied " + plural(s.copied, "path", "paths");
+            if (document.activeElement === document.body) copy.focus();
+        }
+
+        sh.box.appendChild(scroll);
         sh.foot.appendChild(copy);
-        sh.foot.appendChild(delAll);
-        var close = sh.close;
-        sh.close = function () { window.__ccCFRender = null; sh = null; listEl = null; close(); };
+        sh.foot.appendChild(deleteAll.el);
         window.__ccCFRender = render;
         render();
         sh.mount();
+        copy.focus();
+        send({ op: "refresh" });   // a file may have gone without its ledger changing
     }
 
     window.__ccCFOpen = open;
