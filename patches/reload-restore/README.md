@@ -54,8 +54,8 @@ changed nothing a user sees. `git log` has the anchor and the JS.
 
 ## The anchors, and why they are written the way they are
 
-Sub-fix (1) went dark in **2.1.292** and stayed that way until 2.1.295. What
-moved:
+Sub-fix (1) went dark in **2.1.292** and stayed that way until 2.1.295, and again
+from 2.1.326 to 2.1.328. What moved:
 
 - **setupPanel's signature** grew a fifth parameter in 2.1.278 and a sixth with a
   default (`W=!1`) in 2.1.292. Only the panel's name is taken from it now; the
@@ -69,6 +69,12 @@ moved:
   local array (`,null,V)`) in 2.1.278, so it is matched as `[\w$.]+`; the `let`
   line before `onDidChangeViewState` has gained and lost declarations twice, so
   it is one statement (`let [\w$]+=[^;]{0,200};`) rather than its contents.
+- in **2.1.326** the listener's arrow got wrapped in a call
+  (`onDidReceiveMessage(Me((h)=>{...}),null,d)`), and the sub-fix went `[miss]`
+  until 2.1.328. The wrapper's closing paren is optional in the anchor, the same
+  change the shared `Add-WebviewMessageHook` anchor got in #153. Checked on
+  2.1.319, 322, 323, 325, 326, 327 and 328: the insertion point matches exactly
+  once in each, and `apply.ps1` on a pristine 2.1.328 lands every patch.
 
 Checked against every version in the lab's VSIX cache - **2.1.241, 245, 246, 247,
 250, 252, 258, 278, 280, 287, 292, 294, 295** - the signature, the render call
