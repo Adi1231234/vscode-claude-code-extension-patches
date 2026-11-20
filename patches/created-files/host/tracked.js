@@ -6,7 +6,6 @@
 globalThis.__ccCFTracked = globalThis.__ccCFTracked || (function () {
     var fsp = globalThis.__ccCFFs.promises;   // the folders walked are any a chat wrote in, a *.asar one included
     var path = require("path");
-    var execFile = require("child_process").execFile;
     var MAX_LISTINGS = 16, MAX_FOLDERS = 100000;
     var listings = new Map();
     /* Which repository each folder is in, kept between calls: asked afresh every
@@ -48,12 +47,24 @@ globalThis.__ccCFTracked = globalThis.__ccCFTracked || (function () {
         return index ? index.size + ":" + index.mtimeMs : "empty";
     }
 
-    function lsFiles(root) {
-        return new Promise(function (resolve, reject) {
-            execFile("git", ["-C", root, "ls-files", "-z"], { maxBuffer: 1 << 28, windowsHide: true }, function (err, stdout) {
-                if (err) reject(err); else resolve(stdout);
-            });
-        });
+    function lsFiles(root) { return globalThis.__ccCFGit.run(["-C", root, "ls-files", "-z"]); }
+
+    var breathe = globalThis.__ccCFBreathe;
+
+    /* git names a file by its path below the root with "/" between parts and no "."
+       or ".." in it, so the root's own form plus the lower-cased name is the same key
+       norm(path.join(root, rel)) gives. A repository cloned into a chat's scratchpad
+       holds 100,000 files and more: built in one go, the keys held the thread every
+       extension shares for 400 ms (measured 2026-11-20), so other work runs between
+       slices of them (2,000 take about 16 ms). */
+    var KEYS_PER_SLICE = 2000;
+    async function keysOf(root, rels) {
+        var prefix = norm(path.join(root, "x")).slice(0, -1), paths = new Set();
+        for (var i = 0; i < rels.length; i++) {
+            if (rels[i]) paths.add(prefix + rels[i].toLowerCase());
+            if (i % KEYS_PER_SLICE === KEYS_PER_SLICE - 1) await breathe();
+        }
+        return paths;
     }
 
     async function trackedIn(root) {
@@ -62,8 +73,7 @@ globalThis.__ccCFTracked = globalThis.__ccCFTracked || (function () {
             var known = listings.get(root);
             if (known && known.stamp === stamp) return known.paths;
             if (known) moved++;
-            var rels = (await lsFiles(root)).split("\0").filter(Boolean);
-            var paths = new Set(rels.map(function (rel) { return norm(path.join(root, rel)); }));
+            var paths = await keysOf(root, (await lsFiles(root)).split("\0"));
             if (listings.size >= MAX_LISTINGS) listings.clear();
             listings.set(root, { stamp: stamp, paths: paths });
             return paths;

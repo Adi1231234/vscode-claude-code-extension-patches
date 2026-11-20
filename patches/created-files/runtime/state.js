@@ -17,6 +17,7 @@ window.__ccCFState = window.__ccCFState || (function () {
         state.total = 0;
         state.checking = 0;
         state.incomplete = false;
+        state.unrecorded = false;
         state.running = false;
         state.failed = 0;
         state.copied = 0;
@@ -76,6 +77,7 @@ window.__ccCFState = window.__ccCFState || (function () {
         state.total = d.total || 0;
         state.checking = d.checking || 0;   // files not looked at on disk yet: total may still grow
         state.incomplete = !!d.incomplete;
+        state.unrecorded = !!d.unrecorded;   // part of the chat ran before recording: only what Claude wrote and its scratchpad
         state.running = !!d.running;
         state.list = d.list || "";
         if ("failed" in d) {   // stays until the next delete reports

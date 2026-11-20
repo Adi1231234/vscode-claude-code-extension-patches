@@ -17,7 +17,7 @@ globalThis.__ccCFReplay = globalThis.__ccCFReplay || (function () {
         } catch (x) { return null; }
     }
 
-    function breathe() { return new Promise(function (resolve) { setImmediate(resolve); }); }
+    var breathe = globalThis.__ccCFBreathe;
 
     /* A deleted file the chat made is remembered this long, in ledger time, for a
        rewrite that brings it back (the recorder writes one only when the old file
@@ -96,14 +96,36 @@ globalThis.__ccCFReplay = globalThis.__ccCFReplay || (function () {
         return touched;
     }
 
+    /* A file Claude wrote itself (transcript.js) is born again at each of its own
+       edits, which replace the file whole: it is still the chat's while it was born
+       as the chat wrote it. The transcript line comes after the write, by up to 77 s
+       in 6,973 files on disk (2026-11-20). */
+    var WRITTEN_BEFORE_MS = 120000;
+    function bornWhileWriting(e, born) {
+        return e.writes.some(function (w) { return born >= w - WRITTEN_BEFORE_MS && born <= w + CLOCK_SLACK_MS; });
+    }
+
     /* Another file saved at that path later has another identity, and a file older
-       than its own creation was overwritten or moved in, not made here. */
+       than its own creation was overwritten or moved in, not made here. A file in
+       the chat's own scratchpad (scratch.js) is the chat's by where it is. */
     function stillTheChats(e, s, start) {
         if (!s.isFile()) return false;
+        if (e.op === "scratch") return true;
+        if (e.op === "write") return bornWhileWriting(e, Number(s.birthtimeMs));
         if (e.fid && String(s.ino) !== e.fid) return false;
         var madeAt = e.op === "new" ? Date.parse(e.t) : start;
         return !(Number(s.birthtimeMs) < madeAt - CLOCK_SLACK_MS);
     }
 
-    return { create: create, applyLines: applyLines, stillTheChats: stillTheChats };
+    /* A file found by its place has no time until it is looked at: then its birth
+       is its time. The same record comes back while the birth stays the same. */
+    var dates = new WeakMap();
+    function dated(e, s) {
+        if (e.t) return e;
+        var t = new Date(Number(s.birthtimeMs)).toISOString(), d = dates.get(e);
+        if (!d || d.t !== t) dates.set(e, (d = Object.assign({}, e, { t: t })));
+        return d;
+    }
+
+    return { create: create, applyLines: applyLines, stillTheChats: stillTheChats, dated: dated };
 })();

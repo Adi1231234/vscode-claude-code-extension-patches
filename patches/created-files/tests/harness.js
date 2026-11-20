@@ -8,6 +8,7 @@ const path = require('path');
 const root = fs.mkdtempSync(path.join(os.tmpdir(), 'cf-host-'));
 process.env.USERPROFILE = path.join(root, 'home');
 process.env.LOCALAPPDATA = path.join(root, 'local');
+process.env.TEMP = process.env.TMP = path.join(root, 'temp');
 const ledgerDir = path.join(process.env.LOCALAPPDATA, 'claude-code-patches', 'created-files');
 fs.mkdirSync(ledgerDir, { recursive: true });
 
@@ -21,7 +22,7 @@ const vscodeStub = {
 };
 const load = (name) => new Function('require', fs.readFileSync(path.join(__dirname, '..', 'host', name), 'utf8'))(
   (m) => (m === 'vscode' ? vscodeStub : require(m)));
-['fs.js', 'tracked.js', 'internal.js', 'replay.js', 'follow.js', 'files.js', 'ledger.js', 'actions.js', 'acting.js', 'watch.js', 'live.js'].forEach(load);
+require('../host/load-order.json').forEach(load);
 
 const touch = (...parts) => {
   const p = path.join(root, ...parts);
@@ -35,6 +36,20 @@ const ledger = (id, paths) => fs.writeFileSync(path.join(ledgerDir, id + '.jsonl
 /* A ledger of exact events: { op, path, ...anything else the line carries }. */
 const events = (id, list) => fs.writeFileSync(path.join(ledgerDir, id + '.jsonl'),
   list.map((e) => JSON.stringify(Object.assign({ t: '2026-11-19T00:00:00Z' }, e))).join('\r\n') + '\r\n');
+
+/* A chat's transcript in its project folder (or a subagent's), from lines given as
+   objects; and a file in the chat's scratchpad. */
+function transcript(id, lines, opts) {
+  const o = opts || {}, dir = path.join(root, 'home', '.claude', 'projects', o.slug || 'C--proj');
+  const file = o.agent ? path.join(dir, id, 'subagents', `agent-${o.agent}.jsonl`) : path.join(dir, `${id}.jsonl`);
+  fs.mkdirSync(path.dirname(file), { recursive: true });
+  fs.writeFileSync(file, lines.map((l) => JSON.stringify(l)).join('\n') + '\n');
+  return file;
+}
+const said = (t) => ({ type: 'user', message: { role: 'user', content: 'hi' }, timestamp: new Date(t).toISOString() });
+const wrote = (p, t, type) => ({ type: 'user', timestamp: new Date(t).toISOString(),
+  toolUseResult: Object.assign(type ? { type } : {}, { filePath: p, structuredPatch: [], content: 'x' }) });
+const scratch = (id, ...parts) => touch('temp', 'claude', 'C--proj', id, 'scratchpad', ...parts);
 
 function repo(name) {
   const dir = path.join(root, name);
@@ -80,4 +95,4 @@ async function run(tests) {
   process.exit(failed ? 1 : 0);
 }
 
-module.exports = { root, ledgerDir, trashed, editor, touch, ledger, events, repo, panel, send, open, names, wait, run };
+module.exports = { root, ledgerDir, trashed, editor, touch, ledger, events, transcript, said, wrote, scratch, repo, panel, send, open, names, wait, run };
