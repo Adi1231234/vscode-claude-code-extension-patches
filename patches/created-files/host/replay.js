@@ -26,24 +26,36 @@ globalThis.__ccCFReplay = globalThis.__ccCFReplay || (function () {
        a small integer in every record. */
     var FORGET_S = 600, EPOCH_S = 1577836800;
     function seconds(t) { return isFinite(t) ? Math.floor(t / 1000) - EPOCH_S : 0; }
+    /* The few process names and ops, one string each: parsed, every line carried
+       its own copy (adi-tools' records.mjs does the same). */
+    var names = new Map();
+    function shared(s) {
+        if (typeof s !== "string") return s;
+        var known = names.get(s);
+        if (known !== undefined) return known;
+        if (names.size < 4096) names.set(s, s);
+        return s;
+    }
     /* Only what a reader needs of a line: one of these is kept per file a chat made. */
     function record(e, at) {
-        return { path: e.path, t: e.t, op: e.op, image: e.image, source: e.source, fid: e.fid, at: at };
+        return { path: e.path, t: e.t, op: shared(e.op), image: shared(e.image), source: e.source, fid: e.fid, at: at };
     }
     function withFid(base, fid) { return base.fid === fid ? base : Object.assign({}, base, { fid: fid }); }
 
     /* A ledger replayed one line at a time, so a reader following a growing ledger
        applies only the lines added since it last looked. alive: lower-cased path ->
-       the record of the file now there; made: how the chat first made each file,
-       kept a while after a delete. The same as adi-tools' replay.mjs. */
+       the record of the file now there; gone: a file the chat made and deleted, kept
+       a while (its own file can come back). A file still there is not kept twice:
+       two maps of every file the chat made held 36 MB of a 169,000-file chat for
+       nothing (2026-11-20). The same as adi-tools' replay.mjs. */
     function create() {
-        var r = { alive: new Map(), made: new Map(), gaps: 0, start: Infinity };
-        var deleted = [], next = 0, latest = 0;
+        var r = { alive: new Map(), gaps: 0, start: Infinity };
+        var gone = new Map(), deleted = [], next = 0, latest = 0;
 
         function forget(now) {
             while (next < deleted.length && now - deleted[next][0] > FORGET_S) {
                 var key = deleted[next++][1];
-                if (!r.alive.has(key)) r.made.delete(key);
+                if (!r.alive.has(key)) gone.delete(key);
             }
             if (next > 1024 && next * 2 > deleted.length) { deleted = deleted.slice(next); next = 0; }
         }
@@ -58,27 +70,29 @@ globalThis.__ccCFReplay = globalThis.__ccCFReplay || (function () {
             forget(at);
             if (e.op === "gap") r.gaps++;
             if (typeof e.path !== "string") return null;
-            var key = e.path.toLowerCase();
+            var key = e.path.toLowerCase(), before = r.alive.get(key);
+            var made = before || gone.get(key);   // how the chat made the file, if it did
             if (e.op === "delete") {
-                if (r.alive.delete(key) && r.made.has(key)) deleted.push([at, key]);
+                if (r.alive.delete(key)) { gone.set(key, made); deleted.push([at, key]); }
             } else if (e.op === "new" || (e.op === "rename" && e.verified)) {
-                if (!r.made.has(key)) r.made.set(key, record(e, at));
-                r.alive.set(key, withFid(r.made.get(key), e.fid));
-            } else if (e.op === "rewrite" && r.made.has(key)) {
-                var before = r.alive.get(key);
-                r.alive.set(key, withFid(r.made.get(key), e.fid || (before && before.fid)));
+                gone.delete(key);
+                r.alive.set(key, made ? withFid(made, e.fid) : record(e, at));
+            } else if (e.op === "rewrite" && made) {
+                gone.delete(key);
+                r.alive.set(key, withFid(made, e.fid || (before && before.fid)));
             }
-            [r.alive.get(key), r.made.get(key)].forEach(function (x) { if (x) x.at = at; });
+            var x = r.alive.get(key) || gone.get(key);
+            if (x) x.at = at;
             return key;
         };
 
         /* Lets go of a path found not to be the chat's file any more, once no line
            has named it for a while (a line not written yet may bring it back). */
         r.letGo = function (key) {
-            var x = r.alive.get(key) || r.made.get(key);
+            var x = r.alive.get(key) || gone.get(key);
             if (x && latest - x.at <= FORGET_S) return false;
             r.alive.delete(key);
-            r.made.delete(key);
+            gone.delete(key);
             return true;
         };
         return r;

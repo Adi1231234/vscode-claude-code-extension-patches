@@ -93,6 +93,14 @@ repository's index changed, so a commit still takes committed files off. Files
 are looked at through `original-fs` (`fs.js`): Electron's fs opens any `*.asar`
 as an archive, keeps it open and calls it a folder.
 
+A followed chat keeps each file it lists in one map of the replay (`alive`; only the deleted ones
+also wait in a second, for a rewrite) and one of the chat (`rows`), with one shared string per
+process name and op. Before 2026-11-20 every file was kept twice in each - a second map of every
+file the chat made, and one of the files looked at, which always held the same files as `rows` once
+a refresh was done. A 199,000-file chat held 237 MB that way and holds 209 MB now (measured on the
+same reader in adi-tools, adi-tools#62). The panel's answer stayed the same for every chat here (276
+of 278, the two left being chats whose ledger grew between the two runs).
+
 Two things held that thread for long stretches once old chats were read too, both
 measured over all 278 chats here (2026-11-20). **Starting git** is one blocking
 call on Windows - it searches the PATH, then waits while the system looks at the

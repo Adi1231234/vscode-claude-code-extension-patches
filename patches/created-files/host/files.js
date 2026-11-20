@@ -35,7 +35,11 @@ globalThis.__ccCFFiles = globalThis.__ccCFFiles || (function () {
 
     function chat(source) {
         var read = false, version = null, queue = Promise.resolve();
-        var unknown = [], seen = new Map(), rows = new Map(), sorted = null;
+        /* rows: lower-cased path -> the event that made the file, for each file on
+           disk, still the chat's, and not tracked by git: what is listed. (A second
+           map of the files looked at always held the same files once a refresh was
+           done - 169,000 entries for nothing in one chat, 2026-11-20.) */
+        var unknown = [], rows = new Map(), sorted = null;
         var me = {
             files: function () { return sorted || (sorted = Array.from(rows.values()).sort(newestFirst)); },
             gaps: function () { return source.replay.gaps; },
@@ -45,11 +49,10 @@ globalThis.__ccCFFiles = globalThis.__ccCFFiles || (function () {
         };
 
         function startOver(alive) {
-            var before = new Set(seen.keys());
-            seen.clear();
+            var before = new Set(rows.keys());
             unknown = Array.from(alive.entries()).sort(function (a, b) { return newestFirst(b[1], a[1]); })
                 .map(function (kv) { return kv[0]; });
-            return before;   // so whatever was listed is taken off
+            return before;   // so whatever was listed is looked at again, and taken off if it went
         }
 
         async function refresh(paths, verify, again) {
@@ -61,23 +64,21 @@ globalThis.__ccCFFiles = globalThis.__ccCFFiles || (function () {
             var replay = source.replay;
             var looked = await onDisk(Array.from(keys).map(function (k) { return alive.get(k); }).filter(Boolean), replay.start);
             keys.forEach(function (k) {
-                if (looked.has(k)) { seen.set(k, looked.get(k)); return; }
-                seen.delete(k);
-                if (alive.has(k)) replay.letGo(k);   // not the chat's file any more: its record goes, once quiet
+                if (!looked.has(k) && alive.has(k)) replay.letGo(k);   // not the chat's file any more: its record goes, once quiet
             });
             var v = await T.version();
             var scope = v === version ? keys : new Set(Array.from(keys).concat(Array.from(rows.keys())));
             version = v;
-            var candidates = Array.from(scope).filter(function (k) { return seen.has(k); }).map(function (k) { return seen.get(k).path; });
+            /* On disk and still the chat's: as just looked at, or as listed for the files not looked at now. */
+            function current(k) { return keys.has(k) ? looked.get(k) : rows.get(k); }
+            var candidates = Array.from(scope).filter(current).map(function (k) { return current(k).path; });
             var allowed = new Set((await T.drop(candidates)).map(function (p) { return p.toLowerCase(); }));
             scope.forEach(function (k) {
-                if (!seen.has(k) || allowed.has(k)) return;
-                seen.delete(k);   // git tracks it: real work, never listed, so nothing about it is kept
-                replay.letGo(k);
+                if (current(k) && !allowed.has(k)) replay.letGo(k);   // git tracks it: real work, never listed, so nothing about it is kept
             });
             var changed = false;
             scope.forEach(function (k) {
-                var e = allowed.has(k) ? seen.get(k) : undefined;
+                var e = allowed.has(k) ? current(k) : undefined;
                 if (e ? rows.get(k) !== e : rows.has(k)) changed = true;
                 if (e) rows.set(k, e); else rows.delete(k);
             });
