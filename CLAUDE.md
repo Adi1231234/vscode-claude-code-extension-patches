@@ -192,6 +192,14 @@ Need another minified name? Detect it once in `Extension.ps1` and add it to `$Ct
   stylesheet. `tools/perf/perf.mjs` (on every pull request too) measures the rest
   against `tools/perf/budgets.json`. Host code (`host/`) runs in the extension host and is
   exempt.
+- **The extension host is one thread too, and starting a process stops it.** Every
+  extension of the window shares it. `child_process.execFile` on Windows does its
+  whole start inside the call: it searches the PATH for a bare name, then waits
+  while the system looks at the new process. Measured 2026-11-20 starting git: 19-75 ms
+  idle, up to 835 ms while or just after many files were opened - the host stood
+  still for each. A host patch that runs a process more than once in a while starts
+  it from a worker thread (`patches/created-files/host/git.js`), and a loop over tens
+  of thousands of items awaits `setImmediate` between slices (`host/breathe.js`).
 - **Why it is one thread, and how to get one per window.** Two facts put every
   panel of every window in one renderer. VS Code gives all webviews of one
   extension and viewType the same origin (a UUID kept in application storage,

@@ -13,6 +13,7 @@ globalThis.__ccCFLedger = globalThis.__ccCFLedger || (function () {
     var os = require("os");
     var crypto = require("crypto");
     var Files = globalThis.__ccCFFiles;
+    var Sources = globalThis.__ccCFSources;
 
     var DIR = path.join(process.env.LOCALAPPDATA || path.join(os.homedir(), "AppData", "Local"),
         "claude-code-patches", "created-files");
@@ -26,7 +27,7 @@ globalThis.__ccCFLedger = globalThis.__ccCFLedger || (function () {
 
     function chatOf(id) {
         var c = chats.get(id);
-        if (!c) chats.set(id, (c = Files.chat(path.join(DIR, id + ".jsonl"))));
+        if (!c) chats.set(id, (c = Files.chat(Sources.of(id, path.join(DIR, id + ".jsonl"), DIR))));
         return c;
     }
 
@@ -42,13 +43,14 @@ globalThis.__ccCFLedger = globalThis.__ccCFLedger || (function () {
 
     /* opts.verify: how many files the ledger names but nobody looked at yet to look
        at now (newest first); opts.paths: files to look at again, or "all" for every
-       listed one (before acting on all of them). */
+       listed one (before acting on all of them); opts.again: look for files no line
+       announces, in the chat's scratchpad (the dialog was opened). */
     async function read(sessionId, opts) {
         var c = chatOf(sessionId), o = opts || {};
         var again = o.paths === "all" ? c.files().map(function (e) { return e.path; }) : o.paths;
-        await c.refresh({ paths: again || [], verify: o.verify || 0 });
+        await c.refresh({ paths: again || [], verify: o.verify || 0, again: !!o.again });
         var s = shape(c.files());
-        return { files: s.files, list: s.list, incomplete: c.gaps() > 0, checking: c.pending() };
+        return { files: s.files, list: s.list, incomplete: c.gaps() > 0, unrecorded: c.unrecorded(), checking: c.pending() };
     }
 
     /* No panel shows this chat any more: what was kept about it goes. */

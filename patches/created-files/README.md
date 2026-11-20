@@ -43,6 +43,31 @@ only when (`host/replay.js`):
   that repository is listed.
 
 The same rules live in `adi-tools/packages/created-files`; change the two together.
+
+## A chat the recorder did not see
+
+On 2026-11-20 only 41 of 278 chats had a ledger: every chat older than the
+recorder had none, and its panel showed nothing. So for a chat whose transcript
+began before its ledger, or that has no ledger, two more records are read
+(`host/sources.js`), and where the ledger names a path its word stands:
+
+- **Its scratchpad** (`host/scratch.js`): `%TEMP%\claude\<project>\<id>\scratchpad`
+  carries the chat's id, so every file in it is the chat's, whatever made it.
+  Most of what old chats left sits there: 204,000 files in 103 of them. The folder
+  is walked without opening a file, links are not followed, `.git` is skipped, and
+  it is walked again when the dialog opens.
+- **What Claude wrote itself** (`host/transcript.js`): each Write result in the
+  chat's transcript, and its subagents'. Only lines naming `structuredPatch` are
+  parsed: 7 GB of transcripts read in 32 s, the largest chat (505 MB) in 1.8 s.
+  An edit replaces the file whole, so the file's birth moves to each edit: a file
+  is still the chat's when it was born while the chat wrote it, from 120 s before a
+  Write or Edit line to 2 s after. 6,410 of 6,973 such files on disk passed; the
+  rest were made again later by git or another chat, and git tracks most of them.
+
+Commands leave no line in a transcript, so for the part of a chat that ran before
+recording began on this machine (the earliest first line of any ledger) the dialog
+says its list holds only these two. Only this panel reads them: the Adi Tools tab
+still lists recorded chats alone.
 The host looks at a file afresh before acting on it, so a button can only ever
 reach a file that is on this chat's list at that moment, and Delete all moves
 nothing unless the list is exactly the one the user confirmed, and moves exactly
@@ -65,6 +90,16 @@ repository's index changed, so a commit still takes committed files off. Files
 are looked at through `original-fs` (`fs.js`): Electron's fs opens any `*.asar`
 as an archive, keeps it open and calls it a folder.
 
+Two things held that thread for long stretches once old chats were read too, both
+measured over all 278 chats here (2026-11-20). **Starting git** is one blocking
+call on Windows - it searches the PATH, then waits while the system looks at the
+new process - and while or just after files were being looked at it took up to
+835 ms; `git.js` starts it from a worker thread of its own. **What git tracks** in
+a repository cloned into a scratchpad (100,000 files and more) was turned into keys
+in one go, 400 ms; `tracked.js` now builds them more cheaply, in slices. After
+both, the longest stretch while reading any chat was 110 ms (124 ms in another
+run, for a chat of 40,000-50,000 files), against 866 ms before.
+
 ## The two halves
 
 - **webview** (`runtime/`) - `icon.js` the glyph, `link.js` the line to the host,
@@ -73,9 +108,12 @@ as an archive, keeps it open and calls it a folder.
   by path so an update keeps the scroll position and focus, `dialog.js` the list
   built on the shared `__ccModal` chrome. `button-call.js` is inserted beside the
   Session history button using the same header anchor as `panel-restart-button`.
-- **host** (`host/`) - `ledger.js` keeps one followed chat per chat a panel shows
-  (`follow.js` reads what the ledger gained, `files.js` applies the rule above,
-  `replay.js` the line rules), `tracked.js` asks git, `actions.js` reveals,
+- **host** (`host/`, loaded in the order `load-order.json` gives) - `ledger.js`
+  keeps one followed chat per chat a panel shows (`follow.js` reads what a ledger
+  or a transcript gained, `sources.js` puts a chat's records together, `files.js`
+  applies the rule above, `replay.js` the line rules), `tracked.js` asks git
+  (through `git.js`, off the thread; `breathe.js` lets other work run between
+  slices of a long loop), `actions.js` reveals,
   copies and trashes through the editor's own APIs, so nothing is shelled out for
   those and neither editor is branched on, and `acting.js` checks a path before
   any of them. `watch.js` is the folder watch, which survives the folder being

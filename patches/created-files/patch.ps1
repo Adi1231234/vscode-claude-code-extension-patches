@@ -52,8 +52,10 @@ function Invoke-Patch {
         '__JSX__' = '${1}'; '__BUTTON__' = '${2}'
     })).Trim()
 
-    $hostJs = (@('fs.js', 'tracked.js', 'internal.js', 'replay.js', 'follow.js', 'files.js', 'ledger.js', 'actions.js', 'acting.js', 'watch.js', 'live.js') |
-        ForEach-Object { Read-Text (Join-Path $PSScriptRoot "host/$_") }) -join "`n"
+    # Each host part takes what the ones before it define, so they go in the order
+    # host/load-order.json gives (the tests load them from the same list).
+    $hostOrder = Read-Text (Join-Path $PSScriptRoot 'host/load-order.json') | ConvertFrom-Json
+    $hostJs = ($hostOrder | ForEach-Object { Read-Text (Join-Path $PSScriptRoot "host/$_") }) -join "`n"
 
     Write-Text $Ctx.WebJs ("/* CREATEDFILES */`n" + $runtime + "`n" + (Set-MatchText $wc $btn[0] $btn[0].Result($call)))
     Write-Text $Ctx.Js ("/* CREATEDFILESHOST */`n" + $hostJs.Trim() + "`n" + $hooked)

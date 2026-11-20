@@ -20,7 +20,7 @@ globalThis.__ccCF = globalThis.__ccCF || (function () {
         if (!data || !views) return;
         var msg = Object.assign({
             type: "ccCFData", sessionId: id, files: data.files.slice(0, LIST_CAP), total: data.files.length,
-            checking: data.checking, incomplete: data.incomplete, running: wasRecording, list: data.list
+            checking: data.checking, incomplete: data.incomplete, unrecorded: data.unrecorded, running: wasRecording, list: data.list
         }, extra);
         views.forEach(function (wv) {
             try { Promise.resolve(wv.postMessage(msg)).catch(function () {}); } catch (e) {}
@@ -45,7 +45,7 @@ globalThis.__ccCF = globalThis.__ccCF || (function () {
         syncRecording();
         var before = latest.get(id);
         var paths = (o.paths || []).concat(o.shown && before ? before.files.slice(0, LIST_CAP).map(function (x) { return x.path; }) : []);
-        L.read(id, { verify: before ? o.verify : FIRST_LOOK, paths: paths }).then(function (data) {
+        L.read(id, { verify: before ? o.verify : FIRST_LOOK, paths: paths, again: !!o.shown }).then(function (data) {
             if (!byId.has(id)) return;   // its last panel left while this was reading
             latest.set(id, data);
             deliver(id, extra);
