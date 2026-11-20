@@ -43,6 +43,10 @@ only when (`host/replay.js`):
   that repository is listed.
 
 The same rules live in `adi-tools/packages/created-files`; change the two together.
+The host looks at a file afresh before acting on it, so a button can only ever
+reach a file that is on this chat's list at that moment, and Delete all moves
+nothing unless the list is exactly the one the user confirmed, and moves exactly
+that list.
 
 ## A chat the recorder did not see
 
@@ -66,12 +70,11 @@ began before its ledger, or that has no ledger, two more records are read
 
 Commands leave no line in a transcript, so for the part of a chat that ran before
 recording began on this machine (the earliest first line of any ledger) the dialog
-says its list holds only these two. Only this panel reads them: the Adi Tools tab
-still lists recorded chats alone.
-The host looks at a file afresh before acting on it, so a button can only ever
-reach a file that is on this chat's list at that moment, and Delete all moves
-nothing unless the list is exactly the one the user confirmed, and moves exactly
-that list.
+says its list holds only these two. The Adi Tools tab reads the same records with
+the same rules (`adi-tools/packages/created-files`: `sources.mjs`, `scratch.mjs`,
+`transcript.mjs`, `stillTheChats.mjs`, adi-tools#60); change the two together. Over
+every chat on this machine the two gave the same files for 280 of 281, the one
+left being a chat that was writing files between the two reads.
 
 ## What a change costs
 
