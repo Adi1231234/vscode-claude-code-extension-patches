@@ -20,17 +20,21 @@ globalThis.__ccCFFiles = globalThis.__ccCFFiles || (function () {
 
     function newestFirst(a, b) { return a.t === b.t ? 0 : a.t < b.t ? 1 : -1; }
 
-    /* The events whose file is on disk and still the one the chat made. */
+    /* The events whose file is on disk and still the one the chat made, and each such file's size now (the look reads it for free). */
     async function onDisk(events, start) {
-        var found = new Map(), wanted = events.filter(function (e) { return !I.isInternal(e.path); });
+        var found = new Map(), sizes = new Map(), wanted = events.filter(function (e) { return !I.isInternal(e.path); });
         for (var i = 0; i < wanted.length; i += STAT_BATCH) {
             var batch = wanted.slice(i, i + STAT_BATCH);
             var stats = await Promise.all(batch.map(function (e) {
                 return fsp.stat(e.path, { bigint: true }).catch(function () { return null; });
             }));
-            batch.forEach(function (e, j) { if (stats[j] && R.stillTheChats(e, stats[j], start)) found.set(e.path.toLowerCase(), e); });
+            batch.forEach(function (e, j) {
+                if (!stats[j] || !R.stillTheChats(e, stats[j], start)) return;
+                found.set(e.path.toLowerCase(), e);
+                sizes.set(e.path.toLowerCase(), Number(stats[j].size));
+            });
         }
-        return found;
+        return { found: found, sizes: sizes };
     }
 
     function chat(source) {
@@ -40,13 +44,15 @@ globalThis.__ccCFFiles = globalThis.__ccCFFiles || (function () {
            map of the files looked at always held the same files once a refresh was
            done - 169,000 entries for nothing in one chat, 2026-11-20.) */
         var unknown = [], rows = new Map(), listed = null;
+        var bytes = 0;   // the listed files' size, as each was last looked at: each record keeps its own (size)
         var me = {
             /* A new array only when the list changes, so what is made from it (the tree,
                the list's name) is made once per change. */
             files: function () { return listed || (listed = Array.from(rows.values())); },
             gaps: function () { return source.replay.gaps; },
             unrecorded: function () { return !!(source.unrecorded && source.unrecorded()); },
-            pending: function () { return unknown.length; }
+            pending: function () { return unknown.length; },
+            bytes: function () { return bytes; }
         };
 
         function startOver(alive) {
@@ -63,7 +69,7 @@ globalThis.__ccCFFiles = globalThis.__ccCFFiles || (function () {
             paths.forEach(function (p) { keys.add(String(p).toLowerCase()); });
             while (verify-- > 0 && unknown.length) keys.add(unknown.pop());
             var replay = source.replay;
-            var looked = await onDisk(Array.from(keys).map(function (k) { return alive.get(k); }).filter(Boolean), replay.start);
+            var seen = await onDisk(Array.from(keys).map(function (k) { return alive.get(k); }).filter(Boolean), replay.start), looked = seen.found;
             keys.forEach(function (k) {
                 if (!looked.has(k) && alive.has(k)) replay.letGo(k);   // not the chat's file any more: its record goes, once quiet
             });
@@ -79,9 +85,18 @@ globalThis.__ccCFFiles = globalThis.__ccCFFiles || (function () {
             });
             var changed = false;
             scope.forEach(function (k) {
-                var e = allowed.has(k) ? current(k) : undefined;
-                if (e ? rows.get(k) !== e : rows.has(k)) changed = true;
-                if (e) rows.set(k, e); else rows.delete(k);
+                var e = allowed.has(k) ? current(k) : undefined, before = rows.get(k), was = before ? before.size || 0 : 0;
+                if (e) {
+                    var size = seen.sizes.has(k) ? seen.sizes.get(k) : was;   // a file not looked at now keeps its size
+                    if (before !== e || size !== was) changed = true;
+                    bytes += size - (before ? was : 0);
+                    e.size = size;
+                    rows.set(k, e);
+                } else if (before) {
+                    changed = true;
+                    bytes -= was;
+                    rows.delete(k);
+                }
             });
             if (changed) listed = null;
             return changed;

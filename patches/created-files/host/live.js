@@ -28,7 +28,7 @@ globalThis.__ccCF = globalThis.__ccCF || (function () {
         var data = latest.get(id), views = byId.get(id);
         if (!data || !views) return;
         var msg = Object.assign({
-            type: "ccCFData", sessionId: id, total: data.files.length,
+            type: "ccCFData", sessionId: id, total: data.files.length, bytes: data.bytes,
             checking: data.checking, incomplete: data.incomplete, unrecorded: data.unrecorded, running: wasRecording, list: data.list
         }, extra);
         (only ? [only] : views).forEach(function (wv) {
@@ -41,7 +41,7 @@ globalThis.__ccCF = globalThis.__ccCF || (function () {
 
     /* Nothing a panel shows differs: the list is the same array while it stays the same. */
     function same(a, b) {
-        return !!a && a.files === b.files && a.checking === b.checking && a.incomplete === b.incomplete && a.unrecorded === b.unrecorded;
+        return !!a && a.files === b.files && a.bytes === b.bytes && a.checking === b.checking && a.incomplete === b.incomplete && a.unrecorded === b.unrecorded;
     }
 
     /* opts.verify: files not looked at yet to look at now; opts.paths: files to look

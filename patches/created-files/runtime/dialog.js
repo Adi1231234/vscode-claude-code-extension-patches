@@ -105,7 +105,7 @@
             copy.disabled = s.checking > 0;
             info.textContent = s.checking ? "Still looking at " + plural(s.checking, "more file", "more files") + " on disk. Copy all and Delete all wait for that." :
                 !s.total ? "No files from this chat are still on disk." : "";
-            sh.sub.textContent = plural(s.total, "file", "files") + " still on disk" + (s.checking ? ", checking more" : "");
+            sh.sub.textContent = plural(s.total, "file", "files") + (typeof s.bytes === "number" ? ", " + window.__ccCFSize(s.bytes) + "," : "") + " still on disk" + (s.checking ? ", checking more" : "");
             if (s.copied) copy.textContent = "Copied " + plural(s.copied, "path", "paths");
         }
 

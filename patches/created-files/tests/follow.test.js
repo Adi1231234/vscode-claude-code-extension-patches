@@ -42,6 +42,21 @@ run({
     view.dispose();
   },
 
+  async 'the size of the listed files is sent, and follows a new file and a deleted one'() {
+    const a = touch('size', 'a.bin'), b = touch('size', 'b.bin');
+    fs.writeFileSync(a, 'x'.repeat(1000));
+    fs.writeFileSync(b, 'y'.repeat(300));
+    ledger('size', [a]);
+    const { view, data } = await open('size');
+    assert.strictEqual(data.bytes, 1000);
+    ledger('size', [a, b]);
+    assert.strictEqual((await until(view, (m) => m.total === 2)).bytes, 1300);
+    fs.rmSync(b);
+    fs.appendFileSync(path.join(ledgerDir, 'size.jsonl'), JSON.stringify({ t: '2026-11-19T00:00:01Z', op: 'delete', path: b }) + '\r\n');
+    assert.strictEqual((await until(view, (m) => m.total === 1)).bytes, 1000);
+    view.dispose();
+  },
+
   async 'a file deleted outside any chat leaves the list when the dialog opens again'() {
     const a = touch('outside', 'a.txt'), b = touch('outside', 'b.txt');
     ledger('outside', [a, b]);
