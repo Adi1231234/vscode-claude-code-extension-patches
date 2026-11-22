@@ -27,8 +27,10 @@ function Invoke-Patch {
 
     # (1) The input footer: from the component's semantic signature to the flex
     # spacer inside it. That one match yields the session variable, the minified
-    # jsx factory and the CSS-module map, so none of the three is hardcoded.
-    $rxFooter = 'function [\w$]+\(\{session:([\w$]+),mode:[\w$]+,availablePermissionModes:[\s\S]{0,6000}?([\w$]+)\("div",\{className:([\w$]+)\.spacer\}\),'
+    # jsx factory and the CSS-module map, so none of the three is hardcoded. A
+    # prop or two between `session` and `mode` are allowed: 2.1.330 added
+    # `contextUsageThreshold` there, and the gear went missing.
+    $rxFooter = 'function [\w$]+\(\{session:([\w$]+),(?:[\w$]+:[\w$]+,){0,4}?mode:[\w$]+,availablePermissionModes:[\s\S]{0,6000}?([\w$]+)\("div",\{className:([\w$]+)\.spacer\}\),'
     $m = [regex]::Match($wc, $rxFooter)
     if (-not $m.Success) { Write-Miss 'input-footer spacer anchor not found'; return }
 

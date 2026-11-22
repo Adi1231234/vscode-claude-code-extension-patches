@@ -56,10 +56,21 @@ Wraps the `cwd` of the SDK query every panel session is launched through in
 `__ccDriveCase`, which upper-cases a leading drive letter and passes anything
 else (UNC, POSIX, non-strings) through untouched.
 
-- Anchor: `{cwd:<expression>,resume:<id>,canUseTool:`. The two ends are
-  matched and the expression between them is captured, as long as it has no
-  comma or brace.
+- Anchor: every `{cwd:<expression>,` of the launch options, which end in
+  `resume:<id>,canUseTool:` with no `;` before it. The expression is captured as
+  long as it has no comma or brace. There is one up to 2.1.329 and two from
+  2.1.330 (see below); any other count is a miss.
 - Guard: `/* CWDDRIVECASE */`
+
+## Dark on 2.1.330
+
+2.1.330 put more options between the cwd and `resume:` - a second, conditional
+cwd for a launch whose workspace trust is withheld
+(`...L!==void 0&&{cwd:L,additionalDirectories:[]}`, a folder under the
+extension's storage or the workspace itself), and a denied-MCP-servers list.
+The anchor expected `resume:` right after the cwd and went `[miss]`. It now
+wraps every cwd of those options, the second one included: the CLI records
+whichever it is given. Checked on 2.1.329 (one) and 2.1.330 (two).
 
 ## Dark again from 2.1.323 to 2.1.325
 

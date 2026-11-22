@@ -7,23 +7,24 @@
 # handed to the SDK query every panel session is launched through, so the
 # spelling the CLI records is the one Windows itself reports. See README.md.
 #
-# The site has two fixed ends, `{cwd:` and `,resume:<id>,canUseTool:`, and what
-# lies between is captured, not spelled out: up to 2.1.322 it was a variable,
-# since 2.1.323 it is the workspace-trust conditional
-# (`T.viaProcessWrapper===!1&&w.kind==="trusted"?w.directory:b`). A comma or a
-# brace in it is a miss rather than a guess. The inserted expression lives in
-# js/sdk-cwd-expr.js; its __V1__ / __V2__ placeholders map to the capture groups.
+# The site is every `{cwd:<value>,` of the launch options object, which ends in
+# `resume:<id>,canUseTool:` with no `;` before it. The value is captured, not
+# spelled out: up to 2.1.322 a variable, since 2.1.323 the workspace-trust
+# conditional (`T.viaProcessWrapper===!1&&w.kind==="trusted"?w.directory:b`). A
+# comma or a brace in it is a miss rather than a guess. 2.1.330 added a second,
+# conditional cwd to the same object (trust withheld), so one or two match. The
+# inserted expression lives in js/sdk-cwd-expr.js; __V1__ maps to the capture.
 function Invoke-Patch {
     param($Ctx)
     $js = Read-Text $Ctx.Js
     if ($js.Contains('/* CWDDRIVECASE */')) { Write-Skip 'already patched'; return }
 
-    $rxSdk = '\{cwd:([^,{}]+?),resume:([\w$]+),canUseTool:'
+    $rxSdk = '\{cwd:([^,{}]+?),(?=[^;]{0,600}?resume:[\w$]+,canUseTool:)'
     $sdk = ([regex]$rxSdk).Matches($js).Count
-    if ($sdk -ne 1) { Write-Miss "SDK launch cwd anchor matched $sdk times, expected 1"; return }
+    if ($sdk -lt 1 -or $sdk -gt 2) { Write-Miss "SDK launch cwd anchor matched $sdk times, expected 1 or 2"; return }
 
     $sdkExpr = (Get-InjectedJs (Join-Path $PSScriptRoot 'js\sdk-cwd-expr.js') ([ordered]@{
-        '__V1__' = '${1}'; '__V2__' = '${2}'
+        '__V1__' = '${1}'
     })).Trim()
     $js = [regex]::Replace($js, $rxSdk, $sdkExpr)
 
