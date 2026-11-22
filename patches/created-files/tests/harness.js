@@ -85,7 +85,9 @@ function panel() {
 }
 const send = (view, msg) => globalThis.__ccCF.handle(Object.assign({ type: 'ccCF' }, msg), view);
 
-/* The messages a panel gets until one passes `done`. */
+/* The messages a panel gets until one passes `done`. The host posts only when
+   something a panel shows changed, and a look at what a dialog shows can land
+   between two steps, so a step awaits the message it means, not the next one. */
 async function until(view, done) {
   for (let i = 0; i < 50; i++) {
     const m = await view.next();
