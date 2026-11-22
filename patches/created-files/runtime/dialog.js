@@ -61,7 +61,9 @@
 
     function note(s) {
         if (s.failed) return plural(s.failed, "file", "files") + " could not be moved to the Recycle Bin.";
-        if (s.unrecorded) return "Part of this chat ran before recording began. For that part, only the files Claude wrote itself and the files in its scratchpad are listed.";
+        if (s.unrecorded) return "Some of this chat's files are missing here. The chat began before Adi Tools started recording files on this computer. " +
+            "For that earlier time, only the files Claude wrote itself and the files in the chat's scratchpad folder are shown. " +
+            "Files that commands, scripts or builds made back then were not recorded.";
         if (s.incomplete) return "Recording was off for a while - this list may be incomplete.";
         return "";
     }
