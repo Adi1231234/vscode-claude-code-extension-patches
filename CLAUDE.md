@@ -26,8 +26,11 @@ in place. Read this before changing anything so the structure stays clean.
   - `js/` - shared runtime JS, one copy each: `ccCopyText.js`
     (`window.__ccCopyText`), `ccStore.js` (`__ccStore` / `__ccFiber`, the webview
     session-store finder), `ccRow.js` (`window.__ccRow`, the relative order
-    injected footer buttons agree on) and `ccModal.js` (`window.__ccModal`, the
-    dialog chrome - overlay, head, foot, Esc, backdrop, focus trap) - each pulled
+    injected footer buttons agree on), `ccModal.js` (`window.__ccModal`, the
+    dialog chrome - overlay, head, foot, Esc, backdrop, focus trap) and `ccMenu.js`
+    (`window.__ccMenu`, a popup menu in the app's command-menu style, keyboard as
+    the WAI-ARIA menu pattern; a dialog passes it keys with `__ccMenu.takeKey`;
+    `created-files` uses it, the queue's older row menu does not yet) - each pulled
     into a patch's fragment list with `Get-LibJsPath`. Plus the **webview
     runtime** every patch that watches or ticks is built on (see "The webview
     runtime" under conventions): `ccDom.js` (`__ccDom`, writes only on a real
@@ -51,8 +54,8 @@ in place. Read this before changing anything so the structure stays clean.
     (`__ccTranscript`: a session's transcript found by id, and its records of
     one type read newest first without loading a tens-of-MB file).
   - `css/` - the shared stylesheets, `Get-LibCssPath`: `ccScroll.css` (the
-    scrollbar) and `ccModal.css` (the dialog chrome that goes with
-    `lib/js/ccModal.js`). Whichever patch runs first appends them; the guard in
+    scrollbar), `ccModal.css` (the dialog chrome that goes with
+    `lib/js/ccModal.js`) and `ccMenu.css` (the menu of `lib/js/ccMenu.js`). Whichever patch runs first appends them; the guard in
     the file makes the rest a no-op.
 - **`patches/<name>/`** - one folder per feature or bug fix. Contains:
   - `patch.ps1` - defines a single `function Invoke-Patch { param($Ctx) ... }`.

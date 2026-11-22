@@ -42,9 +42,9 @@ function Invoke-Patch {
     # Shared webview runtimes (self-guarded, so re-including is a no-op), then our
     # own, in dependency order: ccStore before ccSession, dom/watch before state,
     # the modal before the dialog.
-    $libs = @('ccStore.js', 'ccDom.js', 'ccWatch.js', 'ccSession.js', 'ccModal.js', 'ccCopyText.js') |
+    $libs = @('ccStore.js', 'ccDom.js', 'ccWatch.js', 'ccSession.js', 'ccModal.js', 'ccMenu.js', 'ccCopyText.js') |
         ForEach-Object { Get-LibJsPath $_ }
-    $mine = @('icon.js', 'link.js', 'state.js', 'glyphs.js', 'parts.js', 'copyLevels.js', 'rows.js', 'dialog.js') |
+    $mine = @('icon.js', 'link.js', 'state.js', 'glyphs.js', 'parts.js', 'feedback.js', 'rowMenu.js', 'dirRow.js', 'rows.js', 'dialog.js') |
         ForEach-Object { Join-Path $PSScriptRoot "runtime/$_" }
     $runtime = (($libs + $mine) | ForEach-Object { Read-Text $_ }) -join "`n"
 
@@ -63,6 +63,7 @@ function Invoke-Patch {
 
     # The dialog chrome, which otherwise arrives only with prompt-queue.
     Add-StyleBlock $Ctx (Get-LibCssPath 'ccModal.css') '/* QMODAL */' 'shared dialog CSS'
+    Add-StyleBlock $Ctx (Get-LibCssPath 'ccMenu.css') '/* CCMENUCSS */' 'shared menu CSS'
     Add-StyleBlock $Ctx (Join-Path $PSScriptRoot 'created-files.css') '/* CREATEDFILESCSS */' 'created-files CSS'
     Add-StyleBlock $Ctx (Join-Path $PSScriptRoot 'created-files-tree.css') '/* CREATEDFILESTREECSS */' 'created-files tree CSS'
 }

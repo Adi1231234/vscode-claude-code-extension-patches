@@ -61,40 +61,33 @@
 }
 .cc-cf-del:hover { color: var(--app-error-foreground, var(--app-primary-foreground)); }
 
-/* They show on hover or keyboard focus, as in the editor's own file tree; a copy
-   button whose list of levels is open stays. */
+/* They show on hover or keyboard focus, as in the editor's own file tree; a "more"
+   button whose menu is open stays. */
 .cc-cf-row .cc-cf-act { visibility: hidden; }
 .cc-cf-row:hover .cc-cf-act,
 .cc-cf-row:focus-within .cc-cf-act,
-.cc-cf-copy[aria-expanded="true"] { visibility: visible; }
+.cc-cf-more-act[aria-expanded="true"] { visibility: visible; }
 
-/* The levels a joined folder row can be copied at, under its line. */
-.cc-cf-levels {
-    display: flex;
-    flex-direction: column;
-    margin: 2px var(--app-spacing-medium, 8px) var(--app-spacing-small, 4px);
-    padding: var(--app-spacing-small, 4px);
-    border: 1px solid var(--app-widget-border, transparent);
-    border-radius: var(--corner-radius-small, 4px);
-}
-.cc-cf-levels-head {
+/* Each folder of a joined row is a target of its own (dirRow.js): the one under the
+   pointer is underlined, and its tooltip is its path. */
+.cc-cf-seg:hover { text-decoration: underline; }
+.cc-cf-sep { color: var(--app-secondary-foreground); }
+
+/* What a copy did, on the row it was asked on, in place of the count (feedback.js). */
+.cc-cf-noted .cc-cf-count { display: none; }
+.cc-cf-note {
+    flex: 0 0 auto;
     font-size: 11px;
     color: var(--app-secondary-foreground);
-    padding: 2px 6px;
 }
-.cc-cf-level {
-    text-align: left;
-    font-size: 12px;
-    padding: 4px 6px;
-    border: 0;
-    border-radius: var(--corner-radius-small, 4px);
-    background: transparent;
-    color: var(--app-primary-foreground);
-    /* Whole, on two lines if need be: two levels differ only at their end. */
-    overflow-wrap: anywhere;
-    cursor: pointer;
+.cc-cf-note-bad { color: var(--app-error-foreground, var(--app-secondary-foreground)); }
+.cc-cf-live {
+    position: fixed;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
 }
-.cc-cf-level:hover, .cc-cf-level:focus { background: var(--app-list-hover-background, rgba(255, 255, 255, 0.06)); }
 .cc-cf-more-btn {
     padding: 0;
     border: 0;

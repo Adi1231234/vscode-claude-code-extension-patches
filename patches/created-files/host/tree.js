@@ -99,5 +99,41 @@ globalThis.__ccCFTree = globalThis.__ccCFTree || (function () {
         return node.sorted;
     }
 
-    return { build: build, entries: entries };
+    /* A path as a folder's key: any case, either slash, with or without a trailing one. */
+    function keyOf(p) {
+        var k = String(p || "").split("/").join(SEP).toLowerCase();
+        while (k.length && k.charAt(k.length - 1) === SEP) k = k.slice(0, -1);
+        return k;
+    }
+
+    /* The node a folder path is a level of: its own row, or the row whose joined
+       chain passes through it. The root for "", null when the tree has no such folder. */
+    function find(root, p) {
+        var key = keyOf(p);
+        if (!key) return root;
+        for (var at = root; ;) {
+            var next = null;
+            for (var d of at.dirs.values()) {
+                if (d.levels.some(function (l) { return keyOf(l.path) === key; })) return d;
+                if (key.indexOf(d.key + SEP) === 0) next = d;
+            }
+            if (!next) return null;
+            at = next;
+        }
+    }
+
+    /* The paths of what is directly in the folder at `p` - the first level: its files,
+       and the first folder of each row under it. A folder in the middle of a joined
+       row holds only the next one. Null when the tree has no such folder. */
+    function childPaths(root, p) {
+        var node = find(root, p);
+        if (!node) return null;
+        if (node !== root) {
+            var key = keyOf(p), at = node.levels.findIndex(function (l) { return keyOf(l.path) === key; });
+            if (at < node.levels.length - 1) return [node.levels[at + 1].path];
+        }
+        return entries(node).map(function (e) { return e.dir ? e.dir.levels[0].path : e.file.path; });
+    }
+
+    return { build: build, entries: entries, find: find, childPaths: childPaths };
 })();

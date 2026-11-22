@@ -1,6 +1,6 @@
 /* The dialog the header icon opens: every file this chat created that still
-   exists, as a folder tree (rows.js), with reveal and delete per file, copy per
-   folder, and copy-all / delete-all below. It wears the shared dialog chrome (__ccModal), so its
+   exists, as a folder tree (rows.js), with reveal and delete per file, copy and a
+   menu per folder (dirRow.js), and copy-all / delete-all below. It wears the shared dialog chrome (__ccModal), so its
    overlay, head, Escape and focus trap match every other dialog this repo adds.
 
    Deletes and reveals go to the host; after a delete the host pushes a fresh
@@ -85,8 +85,9 @@
             title: "Files this chat created",
             icon: window.__ccCFIcon(),
             cls: "cc-cf-dialog",
-            onKey: window.__ccCFCopyLevels.escape,   // Escape steps out of a list of levels first
+            onKey: function (ev) { return window.__ccMenu.takeKey(ev); },   // Escape closes a row's menu first
             onClose: function () {
+                window.__ccMenu.hide(false);
                 window.__ccCFRender = null;
                 send({ op: "view", open: false });   // the host stops building this chat's tree
             }

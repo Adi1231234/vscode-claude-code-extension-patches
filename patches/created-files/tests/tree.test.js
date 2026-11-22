@@ -2,7 +2,7 @@
 const assert = require('assert');
 const fs = require('fs');
 const path = require('path');
-const { root, touch, ledger, panel, send, until, open, wait, run } = require('./harness');
+const { root, editor, touch, ledger, panel, send, until, open, wait, run } = require('./harness');
 
 const shown = (m) => m.rows.map((r) => `${r.depth}:${r.kind === 'more' ? `+${r.left}` : r.name}`);
 
@@ -41,6 +41,21 @@ run({
     next = view.next();
     send(view, { op: 'toggle', key: sub.key });
     assert.deepStrictEqual((await next).files.map((f) => f.name), ['x.txt', 'top.txt']);
+    view.dispose();
+  },
+
+  async 'a folder\'s first level is copied: its files and the first folder of each row under it'() {
+    const top = path.join(root, 'items');
+    ledger('items', [touch('items', 'a.txt'), touch('items', 'deep', 'x', 'y', 'z.txt'), touch('items', 'sub', 'b.txt'), touch('items', 'sub', 'c.txt')]);
+    const { view, data } = await open('items');
+    const row = data.rows.find((r) => r.kind === 'dir' && r.path === top);
+    assert.strictEqual(row.items, 3, 'a.txt, deep, sub');
+    const ask = async (p) => { const m = until(view, (x) => x.copiedFor === row.key); send(view, { op: 'copyItems', path: p, key: row.key }); return m; };
+    assert.strictEqual((await ask(top)).copiedItems, 3);
+    assert.deepStrictEqual(editor.clipboard.split('\n'), ['deep', 'sub', 'a.txt'].map((n) => path.join(top, n)));
+    assert.strictEqual((await ask(path.join(top, 'deep', 'x'))).copiedItems, 1, 'a folder in the middle of a joined row holds the next one');
+    assert.strictEqual(editor.clipboard, path.join(top, 'deep', 'x', 'y'));
+    assert.strictEqual((await ask(path.join(top, 'nothing-here'))).copyFailed, true);
     view.dispose();
   },
 

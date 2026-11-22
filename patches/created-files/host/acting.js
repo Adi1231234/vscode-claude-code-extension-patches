@@ -35,7 +35,16 @@ globalThis.__ccCFActing = globalThis.__ccCFActing || function (refresh, deliver)
         }).catch(function () { refresh(id, { failed: 0 }); });
     }
 
+    /* The paths directly in one folder of the tree the dialog shows (paths: null when it
+       has none). Only the panel that asked hears, and only once the clipboard took them. */
+    function copyItems(id, paths, key, wv) {
+        if (!paths) { deliver(id, { copiedFor: key, copyFailed: true }, wv); return; }
+        A.copy(paths).then(function () { deliver(id, { copiedFor: key, copiedItems: paths.length }, wv); },
+            function () { deliver(id, { copiedFor: key, copyFailed: true }, wv); });
+    }
+
     return {
+        copyItems: copyItems,
         reveal: function (id, p) { act(id, [p], function (paths) { A.reveal(paths[0]); }); },
         copyAll: function (id) {
             act(id, null, function (paths) {

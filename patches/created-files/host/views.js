@@ -73,6 +73,8 @@ globalThis.__ccCFViews = globalThis.__ccCFViews || (function () {
         forgetShown: forgetShown,
         toggle: function (wv, key) { R.toggle(stateOf(wv).view, String(key)); },
         more: function (wv, key) { R.more(stateOf(wv).view, String(key)); },
+        /* The paths directly in a folder of the chat's tree as its dialog shows it; null when there is none. */
+        itemsOf: function (id, p) { var t = trees.get(id); return t && t.root ? T.childPaths(t.root, String(p)) : null; },
         /* No panel shows this chat any more. */
         forget: function (id) { trees.delete(id); }
     };
