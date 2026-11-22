@@ -68,9 +68,8 @@
     border-radius: var(--corner-radius-small, 4px);
     background: transparent;
     color: var(--app-primary-foreground);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    /* Whole, on two lines if need be: two levels differ only at their end. */
+    overflow-wrap: anywhere;
     cursor: pointer;
 }
 .cc-cf-level:hover, .cc-cf-level:focus { background: var(--app-list-hover-background, rgba(255, 255, 255, 0.06)); }
