@@ -85,6 +85,7 @@
             title: "Files this chat created",
             icon: window.__ccCFIcon(),
             cls: "cc-cf-dialog",
+            onKey: window.__ccCFCopyLevels.escape,   // Escape steps out of a list of levels first
             onClose: function () {
                 window.__ccCFRender = null;
                 send({ op: "view", open: false });   // the host stops building this chat's tree
