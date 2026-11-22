@@ -1,6 +1,6 @@
-/* The list dialog the header icon opens: every file this chat created that still
-   exists, name over full path, with reveal and delete per row and copy-all /
-   delete-all below. It wears the shared dialog chrome (__ccModal), so its
+/* The dialog the header icon opens: every file this chat created that still
+   exists, as a folder tree (rows.js), with reveal and delete per file, copy per
+   folder, and copy-all / delete-all below. It wears the shared dialog chrome (__ccModal), so its
    overlay, head, Escape and focus trap match every other dialog this repo adds.
 
    Deletes and reveals go to the host; after a delete the host pushes a fresh
@@ -90,20 +90,22 @@
             title: "Files this chat created",
             icon: window.__ccCFIcon(),
             cls: "cc-cf-dialog",
-            onClose: function () { window.__ccCFRender = null; }
+            onClose: function () {
+                window.__ccCFRender = null;
+                send({ op: "view", open: false });   // the host stops building this chat's tree
+            }
         });
 
         function render() {
             var s = state();
             var focusInRow = rowsEl.contains(document.activeElement);
-            sync(s.files);
+            sync(s.rows);
             if (focusInRow && !rowsEl.contains(document.activeElement)) copy.focus();   // its row just left
             deleteAll.sync(s);
             warn.textContent = note(s);
             copy.disabled = s.checking > 0;
             info.textContent = s.checking ? "Still looking at " + plural(s.checking, "more file", "more files") + " on disk. Copy all and Delete all wait for that." :
-                !s.total ? "No files from this chat are still on disk." :
-                s.total > s.files.length ? "Showing the newest " + s.files.length + ". Copy all and Delete all cover every file." : "";
+                !s.total ? "No files from this chat are still on disk." : "";
             sh.sub.textContent = plural(s.total, "file", "files") + " still on disk" + (s.checking ? ", checking more" : "");
             if (s.copied) copy.textContent = "Copied " + plural(s.copied, "path", "paths");
         }
@@ -115,6 +117,7 @@
         render();
         sh.mount();
         copy.focus();
+        send({ op: "view", open: true });   // the tree's rows come only while the dialog is open
         send({ op: "refresh" });   // a file may have gone without its ledger changing
     }
 

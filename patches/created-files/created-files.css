@@ -39,7 +39,7 @@
    colour rather than recolouring to whatever --app-warning-foreground happens to
    be - it is grey in the default theme, which would read as "disabled". */
 
-/* The dialog list: the app's own list metrics (4px 8px rows, 2px gaps). It takes
+/* The dialog list (its rows are created-files-tree.css). It takes
    the room the box has rather than a share of the viewport: vh ignores the zoom
    patch, so at zoom 2 a 52vh list pushed the buttons out of the panel. */
 .cc-cf-list {
@@ -48,33 +48,6 @@
     overflow-y: auto;
     margin-top: var(--app-spacing-small, 4px);
 }
-.cc-cf-row {
-    direction: ltr;
-    display: flex;
-    align-items: center;
-    gap: var(--app-spacing-small, 4px);
-    padding: var(--app-list-item-padding, 4px 8px);
-    border-radius: var(--corner-radius-small, 4px);
-}
-.cc-cf-row:hover { background: var(--app-list-hover-background, rgba(255, 255, 255, 0.06)); }
-.cc-cf-text { flex: 1 1 auto; min-width: 0; }
-.cc-cf-name {
-    font-size: 12px;
-    color: var(--app-primary-foreground);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-.cc-cf-path {
-    font-size: 11px;
-    color: var(--app-secondary-foreground);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    direction: ltr;
-    unicode-bidi: plaintext;
-}
-
 /* Row actions: borderless icon buttons that only colour up on hover. */
 .cc-cf-act {
     flex: 0 0 auto;

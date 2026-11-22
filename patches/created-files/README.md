@@ -2,7 +2,8 @@
 
 A **header icon** in the Claude panel, beside Session history, with a **live
 count badge** of the files *this chat* created that still exist, and a **dialog**
-that lists them with reveal, delete and copy-all.
+that shows them as a folder tree, with reveal and delete per file, copy per
+folder, and copy-all.
 
 ## Where the data comes from
 
@@ -115,8 +116,9 @@ run, for a chat of 40,000-50,000 files), against 866 ms before.
 
 - **webview** (`runtime/`) - `icon.js` the glyph, `link.js` the line to the host,
   `state.js` the live badge (a push from the host, re-applied through `__ccDom`
-  after the app re-renders the header, never a poll), `rows.js` the rows, matched
-  by path so an update keeps the scroll position and focus, `dialog.js` the list
+  after the app re-renders the header, never a poll), `rows.js` the tree's rows,
+  matched by key so an update keeps the scroll position and focus, `copyLevels.js`
+  a folder's copy button, `glyphs.js` the small icons, `dialog.js` the dialog
   built on the shared `__ccModal` chrome. `button-call.js` is inserted beside the
   Session history button using the same header anchor as `panel-restart-button`.
 - **host** (`host/`, loaded in the order `load-order.json` gives) - `ledger.js`
@@ -129,9 +131,30 @@ run, for a chat of 40,000-50,000 files), against 866 ms before.
   those and neither editor is branched on, and `acting.js` checks a path before
   any of them. `watch.js` is the folder watch, which survives the folder being
   removed. `live.js` answers the panel's messages, keeps that one watch for the
-  whole host while a panel listens, and pushes a fresh list when that chat's
-  ledger changes. A panel receives the newest 300 files and the total;
-  Copy all and Delete all work on the host, so they cover every file.
+  whole host while a panel listens, and pushes a fresh state when that chat's
+  ledger changes. A panel always receives the counts. It receives the tree's rows
+  only while its dialog is open (`views.js`, `tree.js`, `treeRows.js`). Copy all
+  and Delete all work on the host, so they cover every file.
+
+## The tree
+
+The dialog shows the files as a folder tree.
+
+- **Joined chains.** A chain of folders that holds only the next folder is one
+  row, so a scratchpad ten folders deep is one click.
+- **Copying a path.** A folder row's copy button copies its path. When the row
+  joins several folders, the button opens a list of every level of the chain
+  instead, deepest first, and copies the one picked.
+- **What is open.** The top level starts open; every other folder opens on a
+  click. A folder shows 200 entries, and "Show more" adds the next 200. Each
+  panel keeps which folders are open in it.
+- **Built on the host.** The host builds the tree, in slices. Only a chat some
+  dialog shows gets a tree, one build at a time. A list that changed during a
+  build is built once that one ends.
+- **Cost.** 270 ms for a chat of 372,000 files, against 0.8 s when every path was
+  walked (2026-11-22).
+- **A window loaded before the tree.** Its host still sends the newest files as
+  a list, and the dialog shows them as plain file rows.
 
 ## Visibility
 

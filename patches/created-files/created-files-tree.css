@@ -1,0 +1,85 @@
+/* CREATEDFILESTREECSS */
+/* CREATEDFILES: the dialog's tree rows (runtime/rows.js), in the app's own list
+   colours and spacing tokens. */
+
+/* The tree reads left to right like the paths it holds, whatever the panel's
+   direction; the indent per level is set on each row (rows.js). */
+.cc-cf-rows { direction: ltr; }
+.cc-cf-row {
+    display: flex;
+    align-items: center;
+    gap: var(--app-spacing-small, 4px);
+    padding-block: 1px;
+    padding-inline-end: var(--app-spacing-medium, 8px);
+    border-radius: var(--corner-radius-small, 4px);
+}
+.cc-cf-row:hover { background: var(--app-list-hover-background, rgba(255, 255, 255, 0.06)); }
+.cc-cf-dir > .cc-cf-row { cursor: pointer; }
+.cc-cf-twisty, .cc-cf-icon {
+    flex: 0 0 auto;
+    display: inline-flex;
+    color: var(--app-secondary-foreground);
+}
+.cc-cf-twisty { width: 12px; transition: transform .15s; }
+.cc-cf-open > .cc-cf-row .cc-cf-twisty { transform: rotate(90deg); }
+.cc-cf-name {
+    flex: 1 1 auto;
+    min-width: 0;
+    font-size: 12px;
+    line-height: 24px;
+    color: var(--app-primary-foreground);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.cc-cf-count {
+    flex: 0 0 auto;
+    font-size: 11px;
+    color: var(--app-secondary-foreground);
+    font-variant-numeric: tabular-nums;
+}
+
+/* A row's buttons show on hover or keyboard focus, as in the editor's own file
+   tree; a copy button whose list of levels is open stays. */
+.cc-cf-row .cc-cf-act { visibility: hidden; }
+.cc-cf-row:hover .cc-cf-act,
+.cc-cf-row:focus-within .cc-cf-act,
+.cc-cf-copy[aria-expanded="true"] { visibility: visible; }
+
+/* The levels a joined folder row can be copied at, under its line. */
+.cc-cf-levels {
+    display: flex;
+    flex-direction: column;
+    margin: 2px var(--app-spacing-medium, 8px) var(--app-spacing-small, 4px);
+    padding: var(--app-spacing-small, 4px);
+    border: 1px solid var(--app-widget-border, transparent);
+    border-radius: var(--corner-radius-small, 4px);
+}
+.cc-cf-levels-head {
+    font-size: 11px;
+    color: var(--app-secondary-foreground);
+    padding: 2px 6px;
+}
+.cc-cf-level {
+    text-align: left;
+    font-size: 12px;
+    padding: 4px 6px;
+    border: 0;
+    border-radius: var(--corner-radius-small, 4px);
+    background: transparent;
+    color: var(--app-primary-foreground);
+    /* Whole, on two lines if need be: two levels differ only at their end. */
+    overflow-wrap: anywhere;
+    cursor: pointer;
+}
+.cc-cf-level:hover, .cc-cf-level:focus { background: var(--app-list-hover-background, rgba(255, 255, 255, 0.06)); }
+.cc-cf-more-btn {
+    padding: 0;
+    border: 0;
+    background: transparent;
+    font-size: 11.5px;
+    line-height: 24px;
+    color: var(--app-secondary-foreground);
+    cursor: pointer;
+}
+.cc-cf-more-btn:hover { color: var(--app-primary-foreground); }

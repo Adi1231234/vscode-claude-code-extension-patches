@@ -3,27 +3,34 @@
 
    One directory watcher for the whole host, fanned out to the panels that asked
    about each session id, and open only while a panel is listening. A panel
-   leaves when its view is disposed. One read per chat runs at a time, and the
-   list a panel receives is capped: a single npm install is tens of thousands of
+   leaves when its view is disposed. One read per chat runs at a time. A panel
+   gets the counts always, and the rows of the tree its dialog shows only while
+   the dialog is open (views.js): a single npm install is tens of thousands of
    files. A chat read for the first time answers with its newest files looked at,
    and the rest are looked at a batch at a time behind that answer. Acting on a
    path is checked against a fresh look at that path. */
 globalThis.__ccCF = globalThis.__ccCF || (function () {
-    var L = globalThis.__ccCFLedger;
-    var LIST_CAP = 300, SETTLE_MS = 500, FIRST_LOOK = 2 * LIST_CAP, BATCH = 2000;
+    var L = globalThis.__ccCFLedger, V = globalThis.__ccCFViews;
+    var RECHECK = 300, SETTLE_MS = 500, FIRST_LOOK = 2 * RECHECK, BATCH = 2000;
     var byId = new Map(), ofView = new Map(), known = new WeakSet();
     var flights = new Map(), timers = new Map(), latest = new Map();
     var wasRecording = false;
+
+    function post(wv, msg) {
+        try { Promise.resolve(wv.postMessage(msg)).catch(function () {}); } catch (e) {}
+    }
 
     function deliver(id, extra) {
         var data = latest.get(id), views = byId.get(id);
         if (!data || !views) return;
         var msg = Object.assign({
-            type: "ccCFData", sessionId: id, files: data.files.slice(0, LIST_CAP), total: data.files.length,
+            type: "ccCFData", sessionId: id, total: data.files.length,
             checking: data.checking, incomplete: data.incomplete, unrecorded: data.unrecorded, running: wasRecording, list: data.list
         }, extra);
         views.forEach(function (wv) {
-            try { Promise.resolve(wv.postMessage(msg)).catch(function () {}); } catch (e) {}
+            V.rowsFor(id, wv, data.files).then(function (rows) {
+                post(wv, rows ? Object.assign({ rows: rows }, msg) : msg);   // no rows: closed, or newer ones on the way
+            }, function () { post(wv, msg); });
         });
     }
 
@@ -44,7 +51,7 @@ globalThis.__ccCF = globalThis.__ccCF || (function () {
         flights.set(id, f);
         syncRecording();
         var before = latest.get(id);
-        var paths = (o.paths || []).concat(o.shown && before ? before.files.slice(0, LIST_CAP).map(function (x) { return x.path; }) : []);
+        var paths = (o.paths || []).concat(o.shown && before ? before.files.slice(0, RECHECK).map(function (x) { return x.path; }) : []);
         L.read(id, { verify: before ? o.verify : FIRST_LOOK, paths: paths, again: !!o.shown }).then(function (data) {
             if (!byId.has(id)) return;   // its last panel left while this was reading
             latest.set(id, data);
@@ -88,6 +95,7 @@ globalThis.__ccCF = globalThis.__ccCF || (function () {
         byId.delete(id);
         latest.delete(id);
         L.forget(id);
+        V.forget(id);
         if (!byId.size) folder.stop();
     }
 
@@ -114,6 +122,9 @@ globalThis.__ccCF = globalThis.__ccCF || (function () {
         if (msg.op === "subscribe") subscribe(view, msg.sessionId);
         else if (!id) return true;
         else if (msg.op === "refresh") refresh(id, null, { shown: true });
+        else if (msg.op === "view") { V.setOpen(view.webview, msg.open); deliver(id); }
+        else if (msg.op === "toggle") { V.toggle(view.webview, msg.key); deliver(id); }
+        else if (msg.op === "more") { V.more(view.webview, msg.key); deliver(id); }
         else if (msg.op === "reveal") acting.reveal(id, msg.path);
         else if (msg.op === "copyAll") acting.copyAll(id);
         else if (msg.op === "delete") acting.remove(id, msg.path);

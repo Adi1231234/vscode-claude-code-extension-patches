@@ -59,11 +59,20 @@ function repo(name) {
   return { git, commitAll: () => { git('add', '-A'); git('commit', '-qm', 'x'); } };
 }
 
+/* A panel with its dialog open: next() is the next message carrying the tree's
+   rows, with `files` added - the file rows it shows. */
 function panel() {
   const got = [];
   let waiting = null;
   let dispose = () => {};
-  const webview = { postMessage: async (m) => { got.push(m); if (waiting) { waiting(m); waiting = null; } return true; } };
+  const webview = {
+    postMessage: async (m) => {
+      got.push(m);
+      if (m.rows) m.files = m.rows.filter((r) => r.kind === 'file');
+      if (waiting && m.rows) { waiting(m); waiting = null; }
+      return true;
+    }
+  };
   return {
     webview, got,
     onDidDispose: (fn) => { dispose = fn; },
@@ -75,11 +84,23 @@ function panel() {
   };
 }
 const send = (view, msg) => globalThis.__ccCF.handle(Object.assign({ type: 'ccCF' }, msg), view);
+
+/* The next tree with every folder open: each closed one is opened, once. */
+async function opened(view, first) {
+  const asked = new Set();
+  for (let m = await first; ; m = await view.next()) {
+    const closed = m.rows.filter((r) => r.kind === 'dir' && !r.open);
+    if (!closed.length) return m;
+    closed.filter((r) => !asked.has(r.key)).forEach((r) => { asked.add(r.key); send(view, { op: 'toggle', key: r.key }); });
+  }
+}
+
 async function open(id) {
   const view = panel();
   const first = view.next();
   send(view, { op: 'subscribe', sessionId: id });
-  return { view, data: await first };
+  send(view, { op: 'view', open: true });
+  return { view, data: await opened(view, first) };
 }
 const names = (m) => m.files.map((f) => f.name).sort();
 const wait = (ms) => new Promise((r) => setTimeout(r, ms));
