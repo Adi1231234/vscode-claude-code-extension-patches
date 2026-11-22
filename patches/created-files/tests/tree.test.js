@@ -1,7 +1,8 @@
 /* The dialog's tree.   node patches/created-files/tests/tree.test.js */
 const assert = require('assert');
+const fs = require('fs');
 const path = require('path');
-const { root, touch, ledger, panel, send, open, wait, run } = require('./harness');
+const { root, touch, ledger, panel, send, until, open, wait, run } = require('./harness');
 
 const shown = (m) => m.rows.map((r) => `${r.depth}:${r.kind === 'more' ? `+${r.left}` : r.name}`);
 
@@ -40,6 +41,23 @@ run({
     next = view.next();
     send(view, { op: 'toggle', key: sub.key });
     assert.deepStrictEqual((await next).files.map((f) => f.name), ['x.txt', 'top.txt']);
+    view.dispose();
+  },
+
+  async 'a file deleted outside any chat leaves the tree once its folder is opened'() {
+    const x = touch('late', 'sub', 'x.txt');
+    ledger('late', [x, touch('late', 'sub', 'y.txt'), touch('late', 'top.txt')]);
+    const view = panel();
+    const first = view.next();
+    send(view, { op: 'subscribe', sessionId: 'late' });
+    send(view, { op: 'view', open: true });
+    const sub = (await first).rows.find((r) => r.kind === 'dir' && r.name === 'sub');
+    assert.strictEqual(sub.open, false, 'a folder below the top starts closed');
+    fs.rmSync(x);
+    send(view, { op: 'toggle', key: sub.key });
+    const m = await until(view, (r) => r.files.length === 2);
+    assert.deepStrictEqual(m.files.map((f) => f.name), ['y.txt', 'top.txt']);
+    assert.strictEqual(m.total, 2);
     view.dispose();
   }
 });

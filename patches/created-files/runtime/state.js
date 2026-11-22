@@ -1,5 +1,5 @@
 /* The live state behind the header icon: how many files this chat has created
-   that still exist, and the newest of them for the dialog.
+   that still exist, and the rows of their tree while the dialog shows it.
 
    State is a push, never a poll. __ccSession hands us the session id and the
    connection (and re-does both when the conversation changes), we tell the host,

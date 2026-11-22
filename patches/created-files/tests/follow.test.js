@@ -2,16 +2,7 @@
 const assert = require('assert');
 const fs = require('fs');
 const path = require('path');
-const { ledgerDir, touch, ledger, repo, send, open, wait, run } = require('./harness');
-
-/* The messages a panel gets until one passes `done`. */
-async function until(view, done) {
-  for (let i = 0; i < 50; i++) {
-    const m = await view.next();
-    if (done(m)) return m;
-  }
-  throw new Error('never came');
-}
+const { ledgerDir, touch, ledger, repo, send, until, open, wait, run } = require('./harness');
 
 run({
   async 'a big chat answers with its newest files first, and the rest follow'() {
@@ -37,14 +28,15 @@ run({
     view.dispose();
   },
 
-  async 'a file deleted outside any chat leaves the list when the dialog opens'() {
+  async 'a file deleted outside any chat leaves the list when the dialog opens again'() {
     const a = touch('outside', 'a.txt'), b = touch('outside', 'b.txt');
     ledger('outside', [a, b]);
     const { view } = await open('outside');
+    send(view, { op: 'view', open: false });
     fs.rmSync(a);
-    const next = view.next();
-    send(view, { op: 'refresh' });
-    assert.deepStrictEqual((await next).files.map((f) => f.name), ['b.txt']);
+    send(view, { op: 'view', open: true });
+    const m = await until(view, (x) => x.files.length === 1);
+    assert.deepStrictEqual(m.files.map((f) => f.name), ['b.txt']);
     view.dispose();
   },
 
@@ -68,15 +60,16 @@ run({
     const file = touch('between', 'out.txt');
     const add = (op, extra) => fs.appendFileSync(path.join(ledgerDir, 'between.jsonl'),
       JSON.stringify(Object.assign({ t: new Date().toISOString(), op, path: file }, extra)) + '\r\n');
-    add('new', { verified: true, fid: '1' });
-    const { view } = await open('between');
+    const fid = () => String(fs.statSync(file, { bigint: true }).ino);
+    add('new', { verified: true, fid: fid() });
+    const { view, data } = await open('between');
+    assert.deepStrictEqual(data.files.map((f) => f.name), ['out.txt']);
     fs.rmSync(file);
-    let next = view.next();
     add('delete');
-    await next;   // read while the file is gone
+    await wait(900);   // the delete line is read on its own, while the file is gone
     touch('between', 'out.txt');
-    next = view.next();
-    add('rewrite', { fid: String(fs.statSync(file, { bigint: true }).ino) });
+    const next = view.next();
+    add('rewrite', { fid: fid() });
     assert.deepStrictEqual((await next).files.map((f) => f.name), ['out.txt']);
     view.dispose();
   },

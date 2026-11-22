@@ -39,8 +39,30 @@
     font-variant-numeric: tabular-nums;
 }
 
-/* A row's buttons show on hover or keyboard focus, as in the editor's own file
-   tree; a copy button whose list of levels is open stays. */
+/* A row's buttons (runtime/parts.js iconButton): borderless glyphs that only
+   colour up on hover. */
+.cc-cf-act {
+    flex: 0 0 auto;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    padding: 0;
+    border: 0;
+    border-radius: var(--corner-radius-small, 4px);
+    background: transparent;
+    color: var(--app-secondary-foreground);
+    cursor: pointer;
+}
+.cc-cf-act:hover {
+    background: var(--app-list-active-background, rgba(255, 255, 255, 0.1));
+    color: var(--app-primary-foreground);
+}
+.cc-cf-del:hover { color: var(--app-error-foreground, var(--app-primary-foreground)); }
+
+/* They show on hover or keyboard focus, as in the editor's own file tree; a copy
+   button whose list of levels is open stays. */
 .cc-cf-row .cc-cf-act { visibility: hidden; }
 .cc-cf-row:hover .cc-cf-act,
 .cc-cf-row:focus-within .cc-cf-act,

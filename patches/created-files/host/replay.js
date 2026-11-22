@@ -7,6 +7,7 @@
    saved again, so only an event the change journal confirmed counts as creating
    one. Without that a chat that saved ~/.gitconfig "created" it. */
 globalThis.__ccCFReplay = globalThis.__ccCFReplay || (function () {
+    var breathe = globalThis.__ccCFBreathe;
     var SLICE = 2000, CLOCK_SLACK_MS = 2000;
 
     function parse(line) {
@@ -16,8 +17,6 @@ globalThis.__ccCFReplay = globalThis.__ccCFReplay || (function () {
             return e && typeof e === "object" ? e : null;
         } catch (x) { return null; }
     }
-
-    var breathe = globalThis.__ccCFBreathe;
 
     /* A deleted file the chat made is remembered this long, in ledger time, for a
        rewrite that brings it back (the recorder writes one only when the old file
@@ -131,15 +130,5 @@ globalThis.__ccCFReplay = globalThis.__ccCFReplay || (function () {
         return !(Number(s.birthtimeMs) < madeAt - CLOCK_SLACK_MS);
     }
 
-    /* A file found by its place has no time until it is looked at: then its birth
-       is its time. The same record comes back while the birth stays the same. */
-    var dates = new WeakMap();
-    function dated(e, s) {
-        if (e.t) return e;
-        var t = new Date(Number(s.birthtimeMs)).toISOString(), d = dates.get(e);
-        if (!d || d.t !== t) dates.set(e, (d = Object.assign({}, e, { t: t })));
-        return d;
-    }
-
-    return { create: create, applyLines: applyLines, stillTheChats: stillTheChats, dated: dated };
+    return { create: create, applyLines: applyLines, stillTheChats: stillTheChats };
 })();

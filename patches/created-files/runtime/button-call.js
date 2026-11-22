@@ -10,7 +10,6 @@ __JSX__("div", {
             onClick: function () { if (window.__ccCFOpen) window.__ccCFOpen(); },
             children: __JSX__("span", {
                 className: "cc-cf-glyph",
-                style: { display: "block" },
                 dangerouslySetInnerHTML: { __html: window.__ccCFIcon() }
             })
         }),

@@ -4,24 +4,8 @@
    is touched: rebuilding threw the scroll position and the keyboard focus away on
    every update. The host builds the rows (host/treeRows.js); this only draws. */
 window.__ccCFRows = window.__ccCFRows || (function () {
-    var G = window.__ccCFGlyphs, INDENT = 14, START = 6;
-
-    function el(tag, cls, text) {
-        var x = document.createElement(tag);
-        if (cls) x.className = cls;
-        if (text != null) x.textContent = text;
-        return x;
-    }
-
-    function action(cls, label, svg, onClick) {
-        var b = el("button", "cc-cf-act " + cls);
-        b.type = "button";
-        b.title = label;
-        b.setAttribute("aria-label", label);
-        b.innerHTML = svg;
-        b.onclick = function (ev) { ev.stopPropagation(); onClick(); };
-        return b;
-    }
+    var G = window.__ccCFGlyphs, P = window.__ccCFParts, C = window.__ccCFCopyLevels, el = P.el;
+    var INDENT = 14, START = 6;
 
     function shell(row, glyph, cls) {
         var node = el("div", "cc-cf-node " + cls), line = el("div", "cc-cf-row");
@@ -40,7 +24,7 @@ window.__ccCFRows = window.__ccCFRows || (function () {
         var name = el("span", "cc-cf-name"), count = el("span", "cc-cf-count");
         s.line.appendChild(name);
         s.line.appendChild(count);
-        s.line.appendChild(window.__ccCFCopyLevels.button(s.node, function () { return now.levels; }));
+        s.line.appendChild(C.button(s.node, function () { return now.levels; }));
         s.line.setAttribute("role", "button");
         s.line.tabIndex = 0;
         s.line.onclick = function () { send({ op: "toggle", key: now.key }); };
@@ -60,16 +44,15 @@ window.__ccCFRows = window.__ccCFRows || (function () {
         var s = shell(row, G.file, "cc-cf-file");
         s.line.appendChild(el("span", "cc-cf-name", row.name));
         s.line.title = row.path;
-        s.line.appendChild(action("cc-cf-reveal", "Show in file explorer", G.reveal, function () { send({ op: "reveal", path: row.path }); }));
-        s.line.appendChild(action("cc-cf-del", "Delete to Recycle Bin", G.trash, function () { send({ op: "delete", path: row.path }); }));
+        s.line.appendChild(P.iconButton("cc-cf-reveal", "Show in file explorer", G.reveal, function () { send({ op: "reveal", path: row.path }); }));
+        s.line.appendChild(P.iconButton("cc-cf-del", "Delete to Recycle Bin", G.trash, function () { send({ op: "delete", path: row.path }); }));
         s.update = function () {};
         return s;
     }
 
     function moreRow(row, send) {
         var s = shell(row, "", "cc-cf-more"), now = row;
-        var b = el("button", "cc-cf-more-btn");
-        b.type = "button";
+        var b = P.button("cc-cf-more-btn");
         b.onclick = function () { send({ op: "more", key: now.folder }); };
         s.line.appendChild(b);
         s.update = function (r) { now = r; window.__ccDom.setText(b, "Show more (" + r.left.toLocaleString("en-US") + " left here)"); };
@@ -97,5 +80,5 @@ window.__ccCFRows = window.__ccCFRows || (function () {
         };
     }
 
-    return { el: el, list: list };
+    return { list: list };
 })();

@@ -17,5 +17,6 @@
   "tree.js",
   "treeRows.js",
   "views.js",
+  "reads.js",
   "live.js"
 ]

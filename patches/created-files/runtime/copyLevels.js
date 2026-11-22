@@ -3,25 +3,22 @@
    short list of every level under it instead, deepest first, and the level
    picked is copied - so a path can be copied at any depth the tree shows. */
 window.__ccCFCopyLevels = window.__ccCFCopyLevels || (function () {
-    var G = window.__ccCFGlyphs, el = function (t, c, x) { return window.__ccCFRows.el(t, c, x); };
+    var G = window.__ccCFGlyphs, P = window.__ccCFParts;
     var COPIED_MS = 1200;
 
-    function copied(button) {
-        button.innerHTML = G.check;
-        setTimeout(function () { button.innerHTML = G.copy; }, COPIED_MS);
-    }
-
     function copy(path, button) {
-        Promise.resolve(window.__ccCopyText(path)).then(function () { copied(button); }, function () {});
+        Promise.resolve(window.__ccCopyText(path)).then(function () {
+            button.innerHTML = G.check;
+            setTimeout(function () { button.innerHTML = G.copy; }, COPIED_MS);
+        }, function () {});
     }
 
     /* The list of levels, under the row's line. */
     function panel(levels, button, close) {
-        var box = el("div", "cc-cf-levels");
-        box.appendChild(el("div", "cc-cf-levels-head", "Copy the path of"));
+        var box = P.el("div", "cc-cf-levels");
+        box.appendChild(P.el("div", "cc-cf-levels-head", "Copy the path of"));
         levels.slice().reverse().forEach(function (l) {
-            var b = el("button", "cc-cf-level", l.path);
-            b.type = "button";
+            var b = P.button("cc-cf-level", l.path);
             b.onclick = function (ev) { ev.stopPropagation(); copy(l.path, button); close(); };
             box.appendChild(b);
         });
@@ -29,17 +26,10 @@ window.__ccCFCopyLevels = window.__ccCFCopyLevels || (function () {
         return box;
     }
 
-    /* A copy button for `node` (the row element); levels: the row's chain. */
+    /* A copy button for `node` (the row element); getLevels: the row's chain now. */
     function button(node, getLevels) {
-        var b = el("button", "cc-cf-act cc-cf-copy");
-        b.type = "button";
-        b.title = "Copy the folder's path";
-        b.setAttribute("aria-label", "Copy the folder's path");
-        b.innerHTML = G.copy;
         var open = null;
-        function close() { if (open) { open.remove(); open = null; b.setAttribute("aria-expanded", "false"); } }
-        b.onclick = function (ev) {
-            ev.stopPropagation();
+        var b = P.iconButton("cc-cf-copy", "Copy the folder's path", G.copy, function () {
             var levels = getLevels();
             if (levels.length < 2) return copy(levels[0].path, b);
             if (open) return close();
@@ -47,7 +37,13 @@ window.__ccCFCopyLevels = window.__ccCFCopyLevels || (function () {
             node.appendChild(open);
             b.setAttribute("aria-expanded", "true");
             open.querySelector("button").focus();
-        };
+        });
+        function close() {
+            if (!open) return;
+            open.remove();
+            open = null;
+            b.setAttribute("aria-expanded", "false");
+        }
         return b;
     }
 

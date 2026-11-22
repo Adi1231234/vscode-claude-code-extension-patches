@@ -17,28 +17,23 @@ globalThis.__ccCFLedger = globalThis.__ccCFLedger || (function () {
 
     var DIR = path.join(process.env.LOCALAPPDATA || path.join(os.homedir(), "AppData", "Local"),
         "claude-code-patches", "created-files");
-    var chats = new Map(), shaped = new WeakMap();
+    var chats = new Map(), named = new WeakMap();
 
-    /* Names exactly this list, so a confirmation can be tied to what it showed. */
+    /* Names exactly this list, so a confirmation can be tied to what it showed. Made
+       once per list: a chat's list is a new array only when it changes. */
     function listId(files) {
-        var all = files.map(function (f) { return f.path; }).join("\n");
-        return crypto.createHash("sha1").update(all).digest("hex").slice(0, 16);
+        var id = named.get(files);
+        if (!id) {
+            var all = files.map(function (f) { return f.path; }).join("\n");
+            named.set(files, (id = crypto.createHash("sha1").update(all).digest("hex").slice(0, 16)));
+        }
+        return id;
     }
 
     function chatOf(id) {
         var c = chats.get(id);
         if (!c) chats.set(id, (c = Files.chat(Sources.of(id, path.join(DIR, id + ".jsonl"), DIR))));
         return c;
-    }
-
-    /* The panel's rows and the list's name, made once per change of the list. */
-    function shape(events) {
-        var s = shaped.get(events);
-        if (s) return s;
-        var files = events.map(function (e) { return { path: e.path, name: path.basename(e.path), t: e.t || "" }; });
-        s = { files: files, list: listId(files) };
-        shaped.set(events, s);
-        return s;
     }
 
     /* opts.verify: how many files the ledger names but nobody looked at yet to look
@@ -49,8 +44,8 @@ globalThis.__ccCFLedger = globalThis.__ccCFLedger || (function () {
         var c = chatOf(sessionId), o = opts || {};
         var again = o.paths === "all" ? c.files().map(function (e) { return e.path; }) : o.paths;
         await c.refresh({ paths: again || [], verify: o.verify || 0, again: !!o.again });
-        var s = shape(c.files());
-        return { files: s.files, list: s.list, incomplete: c.gaps() > 0, unrecorded: c.unrecorded(), checking: c.pending() };
+        var files = c.files();
+        return { files: files, list: listId(files), incomplete: c.gaps() > 0, unrecorded: c.unrecorded(), checking: c.pending() };
     }
 
     /* No panel shows this chat any more: what was kept about it goes. */
