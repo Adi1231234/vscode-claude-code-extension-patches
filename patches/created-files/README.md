@@ -129,7 +129,9 @@ run, for a chat of 40,000-50,000 files), against 866 ms before.
   copies and trashes through the editor's own APIs, so nothing is shelled out for
   those and neither editor is branched on, and `acting.js` checks a path before
   any of them. `watch.js` is the folder watch, which survives the folder being
-  removed. `live.js` answers the panel's messages, keeps that one watch for the
+  removed. It hears a ledger grow only because the recorder sets the ledger's
+  write time after its lines: Windows does not report a file held open
+  (adi-tools `resources/createdFiles/README.md`, "Readers hear every line"). `live.js` answers the panel's messages, keeps that one watch for the
   whole host while a panel listens, and pushes a fresh state when that chat's
   ledger changes, one read per chat at a time (`reads.js`). A panel always
   receives the counts. It receives the tree's rows

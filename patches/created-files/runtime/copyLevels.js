@@ -54,6 +54,7 @@ window.__ccCFCopyLevels = window.__ccCFCopyLevels || (function () {
     /* For the dialog's onKey (__ccModal hears every key first): Escape closes an open
        list and puts the focus back on its button. True when it did. */
     function escape(ev) {
+        if (current && !current.button.isConnected) current = null;   // its row or its dialog went with it
         if (ev.key !== "Escape" || !current) return false;
         var was = current;
         was.button.focus();   // first: a row's buttons are hidden unless the row holds the focus

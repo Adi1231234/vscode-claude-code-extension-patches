@@ -28,6 +28,20 @@ run({
     view.dispose();
   },
 
+  async 'a ledger the recorder holds open is heard once it sets the ledger\'s write time'() {
+    const a = touch('held', 'a.txt'), b = touch('held', 'b.txt');
+    const line = (p) => JSON.stringify({ t: '2026-11-19T00:00:00Z', op: 'new', path: p }) + '\r\n';
+    const fd = fs.openSync(path.join(ledgerDir, 'held.jsonl'), 'a');   // kept open, as the recorder keeps it
+    fs.writeSync(fd, line(a));
+    const { view } = await open('held');
+    const pushed = view.next();
+    fs.writeSync(fd, line(b));
+    fs.futimesSync(fd, new Date(), new Date());   // what its Writers.cs does within 250 ms of a line
+    assert.strictEqual((await pushed).total, 2);
+    fs.closeSync(fd);
+    view.dispose();
+  },
+
   async 'a file deleted outside any chat leaves the list when the dialog opens again'() {
     const a = touch('outside', 'a.txt'), b = touch('outside', 'b.txt');
     ledger('outside', [a, b]);
