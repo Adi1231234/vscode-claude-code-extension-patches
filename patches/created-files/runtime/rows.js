@@ -1,14 +1,15 @@
-/* The dialog's tree rows: a folder (opens and closes, copies its path), a file
-   (reveal, delete), or "more" (the next page of a big folder). A chat at work
-   changes its list every moment, so rows are matched by key and only what changed
-   is touched: rebuilding threw the scroll position and the keyboard focus away on
-   every update. The host builds the rows (host/treeRows.js); this only draws. */
+/* The dialog's tree rows: a folder (dirRow.js), a file (reveal, delete, and the same
+   in its menu with "Copy path"), or "more" (the next page of a big folder). A chat
+   at work changes its list every moment, so rows are matched by key and only what
+   changed is touched: rebuilding threw the scroll position and the keyboard focus
+   away on every update. The host builds the rows (host/treeRows.js); this only draws. */
 window.__ccCFRows = window.__ccCFRows || (function () {
-    var G = window.__ccCFGlyphs, P = window.__ccCFParts, C = window.__ccCFCopyLevels, el = P.el;
+    var G = window.__ccCFGlyphs, P = window.__ccCFParts, M = window.__ccCFRowMenu, el = P.el;
     var INDENT = 14, START = 6;
 
     function shell(row, glyph, cls) {
         var node = el("div", "cc-cf-node " + cls), line = el("div", "cc-cf-row");
+        node.setAttribute("data-key", row.key);   // feedback.js finds the row a copy was asked on
         var twisty = el("span", "cc-cf-twisty");
         if (row.kind === "dir") twisty.innerHTML = G.chevron;
         var icon = el("span", "cc-cf-icon");
@@ -19,33 +20,16 @@ window.__ccCFRows = window.__ccCFRows || (function () {
         return { node: node, line: line };
     }
 
-    function dirRow(row, send) {
-        var s = shell(row, G.folder, "cc-cf-dir"), now = row;
-        var name = el("span", "cc-cf-name"), count = el("span", "cc-cf-count");
-        s.line.appendChild(name);
-        s.line.appendChild(count);
-        s.line.appendChild(C.button(s.node, function () { return now.levels; }));
-        s.line.setAttribute("role", "button");
-        s.line.tabIndex = 0;
-        s.line.onclick = function () { send({ op: "toggle", key: now.key }); };
-        s.line.onkeydown = function (ev) { if (ev.key === "Enter" || ev.key === " ") { ev.preventDefault(); s.line.onclick(); } };
-        s.update = function (r) {
-            now = r;
-            var dom = window.__ccDom;
-            dom.setText(name, r.name);
-            dom.setText(count, r.count.toLocaleString("en-US"));
-            dom.toggle(s.node, "cc-cf-open", r.open);
-            dom.setAttr(s.line, "aria-expanded", String(r.open));
-        };
-        return s;
-    }
-
     function fileRow(row, send) {
         var s = shell(row, G.file, "cc-cf-file");
-        s.line.appendChild(el("span", "cc-cf-name", row.name));
-        s.line.title = row.path;
+        var name = el("span", "cc-cf-name", row.name);
+        name.title = row.path;
+        s.line.appendChild(name);
         s.line.appendChild(P.iconButton("cc-cf-reveal", "Show in file explorer", G.reveal, function () { send({ op: "reveal", path: row.path }); }));
         s.line.appendChild(P.iconButton("cc-cf-del", "Delete to Recycle Bin", G.trash, function () { send({ op: "delete", path: row.path }); }));
+        function menu() { return M.forFile(row, s.line, send); }
+        s.line.oncontextmenu = function (ev) { ev.preventDefault(); window.__ccMenu.show(name, menu()); };
+        s.line.onkeydown = function (ev) { if (M.isMenuKey(ev)) { ev.preventDefault(); window.__ccMenu.show(name, menu()); } };
         s.update = function () {};
         return s;
     }
@@ -59,7 +43,11 @@ window.__ccCFRows = window.__ccCFRows || (function () {
         return s;
     }
 
-    var MAKE = { dir: dirRow, file: fileRow, more: moreRow };
+    var MAKE = {
+        dir: function (row, send) { return window.__ccCFDirRow.make(row, send, shell); },
+        file: fileRow,
+        more: moreRow
+    };
 
     /* A keeper of one list's rows: sync(rows) makes the list match, in order. */
     function list(host, send) {

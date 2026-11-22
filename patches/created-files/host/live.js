@@ -124,6 +124,7 @@ globalThis.__ccCF = globalThis.__ccCF || (function () {
         else if (msg.op === "more") { V.more(view.webview, msg.key); deliver(id, null, view.webview); }
         else if (msg.op === "reveal") acting.reveal(id, msg.path);
         else if (msg.op === "copyAll") acting.copyAll(id);
+        else if (msg.op === "copyItems") acting.copyItems(id, V.itemsOf(id, msg.path), String(msg.key), view.webview);
         else if (msg.op === "delete") acting.remove(id, msg.path);
         else if (msg.op === "deleteAll") acting.removeAll(id, msg.list);
         return true;

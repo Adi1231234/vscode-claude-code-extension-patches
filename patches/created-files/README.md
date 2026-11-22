@@ -115,8 +115,9 @@ run, for a chat of 40,000-50,000 files), against 866 ms before.
 - **webview** (`runtime/`) - `icon.js` the glyph, `link.js` the line to the host,
   `state.js` the live badge (a push from the host, re-applied through `__ccDom`
   after the app re-renders the header, never a poll), `rows.js` the tree's rows,
-  matched by key so an update keeps the scroll position and focus, `copyLevels.js`
-  a folder's copy button, `parts.js` the element and buttons all of them are made
+  matched by key so an update keeps the scroll position and focus, `dirRow.js`
+  a folder's row, `rowMenu.js` what a row's menu holds, `feedback.js` what a copy
+  said, `parts.js` the element and buttons all of them are made
   of, `glyphs.js` the small icons, `dialog.js` the dialog built on the shared
   `__ccModal` chrome. `button-call.js` is inserted beside the
   Session history button using the same header anchor as `panel-restart-button`.
@@ -144,9 +145,21 @@ The dialog shows the files as a folder tree.
 
 - **Joined chains.** A chain of folders that holds only the next folder is one
   row, so a scratchpad ten folders deep is one click.
-- **Copying a path.** A folder row's copy button copies its path. When the row
-  joins several folders, the button opens a list of every level of the chain
-  instead, deepest first, and copies the one picked.
+- **Copying.** Shaped by common UX guidance (2026-11-22): one visible action a
+  click away, the rest in a menu that is not only behind a right-click, feedback
+  only once the copy took, and every part of a path a target of its own, as in
+  a file manager's path bar.
+  - A folder row's copy button copies its own path in one click, a joined row's
+    too (its deepest folder).
+  - Its "more" button, a right-click or Shift+F10 open its menu: copy its path,
+    copy the paths of what is directly in it (the first level, one per line,
+    made on the host), and in a joined row the path of each folder of the chain.
+  - Each folder's name in a joined row is its own target: hovering shows its
+    path, and right-clicking it opens that folder's menu.
+  - A file's menu repeats its buttons with "Copy path" added.
+  - The row says "Copied" (or why not) in place of its count for a moment, and a
+    live region says it to a screen reader.
+  - The menu is the shared `lib/js/ccMenu.js`.
 - **What is open.** The top level starts open; every other folder opens on a
   click. A folder shows 200 entries, and "Show more" adds the next 200. Each
   panel keeps which folders are open in it.

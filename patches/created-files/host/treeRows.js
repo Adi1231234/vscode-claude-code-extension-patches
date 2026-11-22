@@ -17,7 +17,7 @@ globalThis.__ccCFTreeRows = globalThis.__ccCFTreeRows || (function () {
                 if (!e.dir) { out.push({ kind: "file", key: e.file.path.toLowerCase(), path: e.file.path, name: e.name, depth: depth }); continue; }
                 var d = e.dir, open = (depth === 0) !== view.toggled.has(d.key);
                 out.push({ kind: "dir", key: d.key, path: d.levels[d.levels.length - 1].path, name: d.name, depth: depth,
-                    count: d.count, open: open, levels: d.levels });
+                    count: d.count, items: d.dirs.size + d.files.length, open: open, levels: d.levels });
                 if (open) walk(d, depth + 1);
             }
             if (shown < all.length) out.push({ kind: "more", key: node.key + "|more", folder: node.key, depth: depth, left: all.length - shown });

@@ -13,6 +13,7 @@ window.__ccCFGlyphs = window.__ccCFGlyphs || (function () {
             "<path d='M11.5 3.5 V6.5 H14.5'" + line + "/>"),
         copy: svg(15, "<rect x='7' y='7' width='9' height='9' rx='1.5'" + line + "/><path d='M13 7 V5 A1 1 0 0 0 12 4 H5 A1 1 0 0 0 4 5 V12 A1 1 0 0 0 5 13 H7'" + line + "/>"),
         check: svg(15, "<path d='M5 10.5 L8.5 14 L15 6.5'" + line + "/>"),
+        dots: svg(15, "<circle cx='5' cy='10' r='1.3' fill='currentColor'/><circle cx='10' cy='10' r='1.3' fill='currentColor'/><circle cx='15' cy='10' r='1.3' fill='currentColor'/>"),
         reveal: folder,   // the folder it opens
         trash: svg(15, "<path d='M5 6 H15 M8 6 V4.5 H12 V6 M6.5 6 V15.5 A1 1 0 0 0 7.5 16.5 H12.5 A1 1 0 0 0 13.5 15.5 V6 M9 9 V13.5 M11 9 V13.5'" + line + "/>")
     };
