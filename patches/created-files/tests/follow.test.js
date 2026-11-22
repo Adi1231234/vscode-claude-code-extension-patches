@@ -20,7 +20,7 @@ run({
       JSON.stringify({ t: new Date(Date.UTC(2026, 10, 19, 0, 0, i)).toISOString(), op: 'new', path: p })).join('\r\n') + '\r\n');
     const { view, data } = await open('big');
     assert.ok(data.checking > 0, 'the first answer comes before every file was looked at');
-    assert.strictEqual(data.files[0].name, 'f699.txt', 'newest first');
+    assert.strictEqual(data.total, 600, 'the newest 600 are looked at first');
     const last = await until(view, (m) => m.checking === 0);
     assert.strictEqual(last.total, 700);
     view.dispose();
@@ -33,7 +33,7 @@ run({
     const b = touch('grow', 'b.txt');
     const next = view.next();
     fs.appendFileSync(path.join(ledgerDir, 'grow.jsonl'), JSON.stringify({ t: '2026-11-19T01:00:00Z', op: 'new', path: b }) + '\r\n');
-    assert.deepStrictEqual((await next).files.map((f) => f.name), ['b.txt', 'a.txt']);
+    assert.deepStrictEqual((await next).files.map((f) => f.name), ['a.txt', 'b.txt']);
     view.dispose();
   },
 

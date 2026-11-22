@@ -14,5 +14,8 @@
   "actions.js",
   "acting.js",
   "watch.js",
+  "tree.js",
+  "treeRows.js",
+  "views.js",
   "live.js"
 ]

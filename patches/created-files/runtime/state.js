@@ -13,7 +13,7 @@ window.__ccCFState = window.__ccCFState || (function () {
     /* Nothing of the previous chat may survive a switch: "Delete all" acts on what
        the dialog shows. */
     function clear() {
-        state.files = [];
+        state.rows = [];
         state.total = 0;
         state.checking = 0;
         state.incomplete = false;
@@ -26,6 +26,12 @@ window.__ccCFState = window.__ccCFState || (function () {
     }
 
     function shown() { return state.running || state.total > 0; }
+
+    /* A window whose host was loaded before the tree (extension.js loads once per
+       window) still sends the newest files as a list: shown as rows of files. */
+    function flat(files) {
+        return files.map(function (f) { return { kind: "file", key: f.path.toLowerCase(), path: f.path, name: f.name, depth: 0 }; });
+    }
 
     function apply() {
         var dom = window.__ccDom;
@@ -73,7 +79,8 @@ window.__ccCFState = window.__ccCFState || (function () {
 
     function onData(d) {
         if (!d || d.sessionId !== state.sid) return;
-        state.files = d.files || [];
+        if (d.rows) state.rows = d.rows;   // only while the dialog is open, and only the newest
+        else if (d.files) state.rows = flat(d.files);
         state.total = d.total || 0;
         state.checking = d.checking || 0;   // files not looked at on disk yet: total may still grow
         state.incomplete = !!d.incomplete;

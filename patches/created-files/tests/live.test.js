@@ -19,12 +19,16 @@ run({
     view.dispose();
   },
 
-  async 'the list is capped, while copy and delete all cover every file'() {
+  async 'a big folder shows a page, while copy and delete all cover every file'() {
     const many = Array.from({ length: 320 }, (_, i) => touch('many', `f${i}.txt`));
     ledger('many', many);
     const { view, data } = await open('many');
-    assert.strictEqual(data.files.length, 300);
+    assert.strictEqual(data.files.length, 200);
+    assert.deepStrictEqual(data.rows.at(-1), { kind: 'more', key: data.rows.at(-1).key, folder: data.rows.at(-1).folder, depth: 1, left: 120 });
     assert.strictEqual(data.total, 320);
+    const paged = view.next();
+    send(view, { op: 'more', key: data.rows.at(-1).folder });
+    assert.strictEqual((await paged).files.length, 320, 'the next page shows the rest');
     const copied = view.next();
     send(view, { op: 'copyAll' });
     assert.strictEqual((await copied).copied, 320);
