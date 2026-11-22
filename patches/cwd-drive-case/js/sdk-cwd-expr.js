@@ -1,1 +1,1 @@
-{cwd:globalThis.__ccDriveCase(__V1__),resume:__V2__,canUseTool:
+{cwd:globalThis.__ccDriveCase(__V1__),
