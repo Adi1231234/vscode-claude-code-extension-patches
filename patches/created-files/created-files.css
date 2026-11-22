@@ -8,38 +8,27 @@
 
 /* The wrapper sits in the header flex row like any other icon button. */
 .cc-cf {
-    position: relative;
     display: inline-flex;
     align-items: center;
 }
 .cc-cf.cc-cf-hidden { display: none; }
 .cc-cf-glyph { display: block; }
 
-/* A small count bubble on the icon's inline-end top corner (follows RTL). */
-.cc-cf-badge {
-    position: absolute;
-    top: 1px;
-    inset-inline-end: 0;
-    min-width: 14px;
-    height: 14px;
-    box-sizing: border-box;
-    padding: 0 3px;
-    border-radius: 7px;
-    background: var(--app-button-background);
-    color: var(--app-button-foreground);
-    font-size: 9px;
-    line-height: 14px;
-    font-weight: 600;
-    text-align: center;
-    pointer-events: none;
+/* The size of the chat's files still on disk, as text beside the icon (it was a
+   count bubble on it until 2026-11-23). Secondary text, so the icon stays the
+   control; a click on it opens the dialog too. Read left to right (follows RTL). */
+.cc-cf-size {
+    margin-inline-start: 2px;
+    font-size: 11px;
+    line-height: 20px;
+    color: var(--app-secondary-foreground);
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
     direction: ltr;
+    cursor: pointer;
 }
-.cc-cf-badge.cc-cf-empty { display: none; }
-/* When part of the window was unwatched the count is a lower bound; that is said
-   plainly in the dialog (the gap warning). The badge keeps the confident accent
-   colour rather than recolouring to whatever --app-warning-foreground happens to
-   be - it is grey in the default theme, which would read as "disabled". */
-
+.cc-cf-size:hover { color: var(--app-primary-foreground); }
+.cc-cf-size.cc-cf-empty { display: none; }
 /* The dialog's scrolling body. It takes the room the box has rather than a share
    of the viewport: vh ignores the zoom patch, so at zoom 2 a 52vh list pushed the
    buttons out of the panel. */

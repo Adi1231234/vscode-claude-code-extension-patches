@@ -1,10 +1,11 @@
 /* The live state behind the header icon: how many files this chat has created
-   that still exist, and the rows of their tree while the dialog shows it.
+   that still exist and their size (written beside the icon), and the rows of their
+   tree while the dialog shows it.
 
    State is a push, never a poll. __ccSession hands us the session id and the
    connection (and re-does both when the conversation changes), we tell the host,
    and the host sends a fresh list whenever that chat's ledger changes. apply()
-   writes the badge and the icon's visibility through __ccDom, so an unchanged
+   writes the size and the icon's visibility through __ccDom, so an unchanged
    value is not a mutation and never wakes the shared observer; __ccWatch re-applies
    after the app re-renders the header, since a remount would drop our live edits. */
 window.__ccCFState = window.__ccCFState || (function () {
@@ -15,6 +16,7 @@ window.__ccCFState = window.__ccCFState || (function () {
     function clear() {
         state.rows = [];
         state.total = 0;
+        state.bytes = 0;
         state.checking = 0;
         state.incomplete = false;
         state.unrecorded = false;
@@ -38,11 +40,12 @@ window.__ccCFState = window.__ccCFState || (function () {
         var wrap = document.getElementById("cc-cf");
         if (!wrap || !dom) return;
         dom.toggle(wrap, "cc-cf-hidden", !shown());
-        var badge = document.getElementById("cc-cf-badge");
-        if (badge) {
-            var n = state.total;
-            dom.setText(badge, n > 0 ? String(n > 999 ? "999+" : n) : "");
-            dom.toggle(badge, "cc-cf-empty", n === 0);
+        var size = document.getElementById("cc-cf-size");
+        if (size) {
+            // A host loaded before sizes were sent (extension.js loads once per window) sends none: its count then.
+            var known = typeof state.bytes === "number";
+            dom.setText(size, !state.total ? "" : known ? window.__ccCFSize(state.bytes) : String(state.total));
+            dom.toggle(size, "cc-cf-empty", !state.total);
         }
     }
 
@@ -82,6 +85,7 @@ window.__ccCFState = window.__ccCFState || (function () {
         if (d.rows) state.rows = d.rows;   // only while the dialog is open, and only the newest
         else if (d.files) state.rows = flat(d.files);
         state.total = d.total || 0;
+        state.bytes = d.bytes;   // undefined from a host older than sizes
         state.checking = d.checking || 0;   // files not looked at on disk yet: total may still grow
         state.incomplete = !!d.incomplete;
         state.unrecorded = !!d.unrecorded;   // part of the chat ran before recording: only what Claude wrote and its scratchpad

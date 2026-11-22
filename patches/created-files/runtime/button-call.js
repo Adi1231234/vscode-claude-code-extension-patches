@@ -13,6 +13,12 @@ __JSX__("div", {
                 dangerouslySetInnerHTML: { __html: window.__ccCFIcon() }
             })
         }),
-        __JSX__("span", { key: "badge", id: "cc-cf-badge", className: "cc-cf-badge cc-cf-empty" })
+        __JSX__("span", {
+            key: "size",
+            id: "cc-cf-size",
+            className: "cc-cf-size cc-cf-empty",
+            "aria-hidden": "true",
+            onClick: function () { if (window.__ccCFOpen) window.__ccCFOpen(); }
+        })
     ]
 }),

@@ -45,7 +45,7 @@ globalThis.__ccCFLedger = globalThis.__ccCFLedger || (function () {
         var again = o.paths === "all" ? c.files().map(function (e) { return e.path; }) : o.paths;
         await c.refresh({ paths: again || [], verify: o.verify || 0, again: !!o.again });
         var files = c.files();
-        return { files: files, list: listId(files), incomplete: c.gaps() > 0, unrecorded: c.unrecorded(), checking: c.pending() };
+        return { files: files, list: listId(files), bytes: c.bytes(), incomplete: c.gaps() > 0, unrecorded: c.unrecorded(), checking: c.pending() };
     }
 
     /* No panel shows this chat any more: what was kept about it goes. */
