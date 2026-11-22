@@ -2,7 +2,11 @@
 const assert = require('assert');
 const fs = require('fs');
 const path = require('path');
-const { ledgerDir, trashed, editor, touch, ledger, panel, send, open, wait, run } = require('./harness');
+const { ledgerDir, trashed, editor, touch, ledger, panel, send, until, open, wait, run } = require('./harness');
+
+/* The answer to a delete, or to a copy: a fresh list can come before it. */
+const reported = (view) => until(view, (m) => 'failed' in m);
+const copied = (view) => until(view, (m) => m.copied > 0);
 
 run({
   async 'delete reaches only a file on this chat\'s list'() {
@@ -10,7 +14,7 @@ run({
     const other = touch('del', 'not-listed.txt');
     ledger('del', [mine]);
     const { view } = await open('del');
-    const after = view.next();
+    const after = reported(view);
     send(view, { op: 'delete', path: other });
     send(view, { op: 'delete', path: mine.toUpperCase() });
     assert.strictEqual((await after).total, 0);
@@ -29,11 +33,11 @@ run({
     const paged = view.next();
     send(view, { op: 'more', key: data.rows.at(-1).folder });
     assert.strictEqual((await paged).files.length, 320, 'the next page shows the rest');
-    const copied = view.next();
+    const copy = copied(view);
     send(view, { op: 'copyAll' });
-    assert.strictEqual((await copied).copied, 320);
+    assert.strictEqual((await copy).copied, 320);
     assert.strictEqual(editor.clipboard.split('\n').length, 320);
-    const after = view.next();
+    const after = reported(view);
     send(view, { op: 'deleteAll', list: data.list });
     assert.strictEqual((await after).total, 0);
     assert.strictEqual(trashed.splice(0).length, 320);
@@ -45,7 +49,7 @@ run({
     ledger('confirm', [a]);
     const { view, data } = await open('confirm');
     ledger('confirm', [a, touch('confirm', 'b.txt')]);
-    const answer = view.next();
+    const answer = reported(view);
     send(view, { op: 'deleteAll', list: data.list });
     assert.strictEqual((await answer).failed, 0);
     await wait(400);
@@ -87,9 +91,11 @@ run({
     const a = first.view.next(), b = second.view.next();
     fs.writeFileSync(status, JSON.stringify({ running: false, pid: process.pid }));
     assert.deepStrictEqual([(await a).running, (await b).running], [false, false]);
-    fs.writeFileSync(status, JSON.stringify({ running: true, pid: 4194300 }));   // a crashed recorder
+    const up = first.view.next();
+    fs.writeFileSync(status, JSON.stringify({ running: true, pid: process.pid }));
+    assert.strictEqual((await up).running, true);
     const c = first.view.next();
-    send(first.view, { op: 'refresh' });
+    fs.writeFileSync(status, JSON.stringify({ running: true, pid: 4194300 }));   // a crashed recorder
     assert.strictEqual((await c).running, false);
     fs.rmSync(status);
     first.view.dispose(); second.view.dispose();

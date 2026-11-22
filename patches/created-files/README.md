@@ -87,20 +87,18 @@ of the window shares. So a chat a panel shows is followed (`follow.js`,
 `files.js`): a change reads only the lines its ledger gained and looks only at the
 files they name. A chat read for the first time answers with its newest files
 looked at, and the rest are looked at a batch at a time behind that answer; the
-dialog says it is still looking, and Copy all and Delete all wait for it. Opening
-the dialog looks again at the rows it shows (a file deleted outside any chat
-leaves no line). What git tracks is filtered again over every file only when a
+dialog says it is still looking, and Copy all and Delete all wait for it. A file
+deleted outside any chat leaves no line, so the dialog looks again at each file
+the first time it shows it after opening (opening a folder shows more). A panel
+hears from the host only when something it shows changed. What git tracks is
+filtered again over every file only when a
 repository's index changed, so a commit still takes committed files off. Files
 are looked at through `original-fs` (`fs.js`): Electron's fs opens any `*.asar`
 as an archive, keeps it open and calls it a folder.
 
 A followed chat keeps each file it lists in one map of the replay (`alive`; only the deleted ones
 also wait in a second, for a rewrite) and one of the chat (`rows`), with one shared string per
-process name and op. Before 2026-11-20 every file was kept twice in each - a second map of every
-file the chat made, and one of the files looked at, which always held the same files as `rows` once
-a refresh was done. A 199,000-file chat held 237 MB that way and holds 209 MB now (measured on the
-same reader in adi-tools, adi-tools#62). The panel's answer stayed the same for every chat here (276
-of 278, the two left being chats whose ledger grew between the two runs).
+process name and op: 209 MB for a 199,000-file chat (adi-tools#62).
 
 Two things held that thread for long stretches once old chats were read too, both
 measured over all 278 chats here (2026-11-20). **Starting git** is one blocking
@@ -118,8 +116,9 @@ run, for a chat of 40,000-50,000 files), against 866 ms before.
   `state.js` the live badge (a push from the host, re-applied through `__ccDom`
   after the app re-renders the header, never a poll), `rows.js` the tree's rows,
   matched by key so an update keeps the scroll position and focus, `copyLevels.js`
-  a folder's copy button, `glyphs.js` the small icons, `dialog.js` the dialog
-  built on the shared `__ccModal` chrome. `button-call.js` is inserted beside the
+  a folder's copy button, `parts.js` the element and buttons all of them are made
+  of, `glyphs.js` the small icons, `dialog.js` the dialog built on the shared
+  `__ccModal` chrome. `button-call.js` is inserted beside the
   Session history button using the same header anchor as `panel-restart-button`.
 - **host** (`host/`, loaded in the order `load-order.json` gives) - `ledger.js`
   keeps one followed chat per chat a panel shows (`follow.js` reads what a ledger
@@ -132,7 +131,8 @@ run, for a chat of 40,000-50,000 files), against 866 ms before.
   any of them. `watch.js` is the folder watch, which survives the folder being
   removed. `live.js` answers the panel's messages, keeps that one watch for the
   whole host while a panel listens, and pushes a fresh state when that chat's
-  ledger changes. A panel always receives the counts. It receives the tree's rows
+  ledger changes, one read per chat at a time (`reads.js`). A panel always
+  receives the counts. It receives the tree's rows
   only while its dialog is open (`views.js`, `tree.js`, `treeRows.js`). Copy all
   and Delete all work on the host, so they cover every file.
 

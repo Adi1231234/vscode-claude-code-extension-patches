@@ -1,5 +1,6 @@
 /* CREATEDFILESCSS */
-/* CREATEDFILES: the header icon with its live count badge, and the list dialog.
+/* CREATEDFILES: the header icon with its live count badge, and the dialog around
+   the tree (its rows are created-files-tree.css).
    Colours are the app's own custom properties, never literals, so the control
    follows the theme. The icon button itself is the app's component, so its size,
    hover and focus ring come from upstream; only the wrapper and the badge are
@@ -39,35 +40,15 @@
    colour rather than recolouring to whatever --app-warning-foreground happens to
    be - it is grey in the default theme, which would read as "disabled". */
 
-/* The dialog list (its rows are created-files-tree.css). It takes
-   the room the box has rather than a share of the viewport: vh ignores the zoom
-   patch, so at zoom 2 a 52vh list pushed the buttons out of the panel. */
+/* The dialog's scrolling body. It takes the room the box has rather than a share
+   of the viewport: vh ignores the zoom patch, so at zoom 2 a 52vh list pushed the
+   buttons out of the panel. */
 .cc-cf-list {
     flex: 1 1 auto;
     min-height: 0;
     overflow-y: auto;
     margin-top: var(--app-spacing-small, 4px);
 }
-/* Row actions: borderless icon buttons that only colour up on hover. */
-.cc-cf-act {
-    flex: 0 0 auto;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 24px;
-    height: 24px;
-    padding: 0;
-    border: 0;
-    border-radius: var(--corner-radius-small, 4px);
-    background: transparent;
-    color: var(--app-secondary-foreground);
-    cursor: pointer;
-}
-.cc-cf-act:hover {
-    background: var(--app-list-active-background, rgba(255, 255, 255, 0.1));
-    color: var(--app-primary-foreground);
-}
-.cc-cf-del:hover { color: var(--app-error-foreground, var(--app-primary-foreground)); }
 
 .cc-cf-warn, .cc-cf-empty-note {
     font-size: 11.5px;

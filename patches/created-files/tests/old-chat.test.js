@@ -3,7 +3,7 @@
 const assert = require('assert');
 const fs = require('fs');
 const path = require('path');
-const { root, touch, events, transcript, said, wrote, scratch, repo, send, open, names, run } = require('./harness');
+const { root, touch, events, transcript, said, wrote, scratch, repo, send, until, open, names, run } = require('./harness');
 
 const OLD = Date.UTC(2026, 9, 1), HOUR = 3600000;
 const now = () => Date.now();
@@ -73,9 +73,9 @@ run({
     assert.deepStrictEqual(names(data), ['before.txt']);
     fs.rmSync(first);
     transcript('old-8', [said(OLD), wrote(a, now(), 'create'), wrote(b, now(), 'create')], { slug: 'C--proj--claude-worktrees-y' });
-    const next = view.next();
+    const done = until(view, (m) => m.checking === 0 && m.files.length === 2);   // a moved record is read from its start
     send(view, { op: 'refresh' });
-    assert.deepStrictEqual(names(await next), ['after.txt', 'before.txt']);
+    assert.deepStrictEqual(names(await done), ['after.txt', 'before.txt']);
     view.dispose();
   },
 

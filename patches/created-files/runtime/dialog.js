@@ -7,18 +7,13 @@
    list and __ccCFRender re-draws the open dialog, so the row leaves on its own
    rather than being removed by hand. */
 (function () {
-    var el = window.__ccCFRows.el;
+    var P = window.__ccCFParts, el = P.el;
     var COPY = "Copy all paths", DELETE_ALL = "Delete all", ANSWER_AFTER_MS = 600;
 
     function state() { return window.__ccCFState.get(); }
     function send(msg) { window.__ccCFState.send(msg); }
     function plural(n, one, many) { return n + " " + (n === 1 ? one : many); }
-
-    function footBtn(label, cls) {
-        var b = el("button", "cc-cf-foot-btn " + cls, label);
-        b.type = "button";
-        return b;
-    }
+    function footBtn(label, cls) { return P.button("cc-cf-foot-btn " + cls, label); }
 
     /* The first press only asks: it can move thousands of files at once. The question
        is about one exact list, so it lapses the moment that list changes, and a double
@@ -81,7 +76,7 @@
         scroll.appendChild(rowsEl);
         scroll.appendChild(info);
         var sync = window.__ccCFRows.list(rowsEl, send);
-        var copy = footBtn(COPY, "cc-cf-copy");
+        var copy = footBtn(COPY, "cc-cf-copyall");
         copy.onclick = function () { if (state().total && !state().checking) send({ op: "copyAll" }); };
         copy.onmouseleave = copy.onblur = function () { copy.textContent = COPY; };
         var deleteAll = deleteAllButton();
@@ -90,6 +85,7 @@
             title: "Files this chat created",
             icon: window.__ccCFIcon(),
             cls: "cc-cf-dialog",
+            onKey: window.__ccCFCopyLevels.escape,   // Escape steps out of a list of levels first
             onClose: function () {
                 window.__ccCFRender = null;
                 send({ op: "view", open: false });   // the host stops building this chat's tree

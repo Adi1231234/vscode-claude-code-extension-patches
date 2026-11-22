@@ -28,7 +28,7 @@ globalThis.__ccCFFiles = globalThis.__ccCFFiles || (function () {
             var stats = await Promise.all(batch.map(function (e) {
                 return fsp.stat(e.path, { bigint: true }).catch(function () { return null; });
             }));
-            batch.forEach(function (e, j) { if (stats[j] && R.stillTheChats(e, stats[j], start)) found.set(e.path.toLowerCase(), R.dated(e, stats[j])); });
+            batch.forEach(function (e, j) { if (stats[j] && R.stillTheChats(e, stats[j], start)) found.set(e.path.toLowerCase(), e); });
         }
         return found;
     }
@@ -39,13 +39,14 @@ globalThis.__ccCFFiles = globalThis.__ccCFFiles || (function () {
            disk, still the chat's, and not tracked by git: what is listed. (A second
            map of the files looked at always held the same files once a refresh was
            done - 169,000 entries for nothing in one chat, 2026-11-20.) */
-        var unknown = [], rows = new Map(), sorted = null;
+        var unknown = [], rows = new Map(), listed = null;
         var me = {
-            files: function () { return sorted || (sorted = Array.from(rows.values()).sort(newestFirst)); },
+            /* A new array only when the list changes, so what is made from it (the tree,
+               the list's name) is made once per change. */
+            files: function () { return listed || (listed = Array.from(rows.values())); },
             gaps: function () { return source.replay.gaps; },
             unrecorded: function () { return !!(source.unrecorded && source.unrecorded()); },
-            pending: function () { return unknown.length; },
-            has: function (p) { return rows.has(String(p).toLowerCase()); }
+            pending: function () { return unknown.length; }
         };
 
         function startOver(alive) {
@@ -82,7 +83,7 @@ globalThis.__ccCFFiles = globalThis.__ccCFFiles || (function () {
                 if (e ? rows.get(k) !== e : rows.has(k)) changed = true;
                 if (e) rows.set(k, e); else rows.delete(k);
             });
-            if (changed) sorted = null;
+            if (changed) listed = null;
             return changed;
         }
 

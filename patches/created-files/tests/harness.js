@@ -85,6 +85,17 @@ function panel() {
 }
 const send = (view, msg) => globalThis.__ccCF.handle(Object.assign({ type: 'ccCF' }, msg), view);
 
+/* The messages a panel gets until one passes `done`. The host posts only when
+   something a panel shows changed, and a look at what a dialog shows can land
+   between two steps, so a step awaits the message it means, not the next one. */
+async function until(view, done) {
+  for (let i = 0; i < 50; i++) {
+    const m = await view.next();
+    if (done(m)) return m;
+  }
+  throw new Error('never came');
+}
+
 /* The next tree with every folder open: each closed one is opened, once. */
 async function opened(view, first) {
   const asked = new Set();
@@ -116,4 +127,4 @@ async function run(tests) {
   process.exit(failed ? 1 : 0);
 }
 
-module.exports = { root, ledgerDir, trashed, editor, touch, ledger, events, transcript, said, wrote, scratch, repo, panel, send, open, names, wait, run };
+module.exports = { root, ledgerDir, trashed, editor, touch, ledger, events, transcript, said, wrote, scratch, repo, panel, send, until, open, names, wait, run };
