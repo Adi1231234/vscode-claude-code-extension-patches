@@ -58,6 +58,14 @@ function Restore-Pristine {
     $guards = @(Get-PatchGuards -PatchesDir $PatchesDir)
     if (-not $guards) { Write-Miss "no patch guards found under $PatchesDir - not touching the bundle"; return $false }
 
+    # Patched with no original kept: get the original as published first
+    # (lib/PublishedOriginal.ps1), so the loop below finds a .pristine for it.
+    $lost = @(foreach ($key in @('Js', 'WebJs', 'Css')) {
+        $file = $Ctx[$key]
+        if ($file -and -not (Test-Path "$file.pristine") -and (Test-AlreadyPatched -Path $file -Guards $guards)) { $file }
+    })
+    if ($lost) { Save-PublishedOriginals -Ctx $Ctx -Files $lost -Guards $guards | Out-Null }
+
     $ok = $true
     foreach ($key in @('Js', 'WebJs', 'Css')) {
         $file = $Ctx[$key]
