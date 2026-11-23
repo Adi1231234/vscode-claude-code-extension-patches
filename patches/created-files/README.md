@@ -64,6 +64,9 @@ began before its ledger, or that has no ledger, two more records are read
 - **What Claude wrote itself** (`host/transcript.js`): each Write result in the
   chat's transcript, and its subagents'. Only lines naming `structuredPatch` are
   parsed: 7 GB of transcripts read in 32 s, the largest chat (505 MB) in 1.8 s.
+  A subagent's transcript has no such line (277 of 277 with a Write or Edit, CLI
+  2.1.330), so there its Write/Edit call is paired with its result by id
+  (`host/toolPairs.js`); before that, nothing a subagent wrote itself was listed.
   An edit replaces the file whole, so the file's birth moves to each edit: a file
   is still the chat's when it was born while the chat wrote it, from 120 s before a
   Write or Edit line to 2 s after. 6,410 of 6,973 such files on disk passed; the

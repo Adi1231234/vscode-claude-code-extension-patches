@@ -6,6 +6,7 @@
   "internal.js",
   "replay.js",
   "follow.js",
+  "toolPairs.js",
   "transcript.js",
   "scratch.js",
   "sources.js",
