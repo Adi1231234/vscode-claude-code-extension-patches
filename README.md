@@ -24,7 +24,7 @@ Most of these are genuine defects in how the extension handles **git worktrees**
 One line in **PowerShell** — no clone, no git required:
 
 ```powershell
-irm https://raw.githubusercontent.com/Adi1231234/vscode-cursor-claude-code-extension-patches/master/install.ps1 | iex
+irm https://raw.githubusercontent.com/Adi1231234/vscode-claude-code-extension-patches/master/install.ps1 | iex
 ```
 
 Then reload: `Ctrl+Shift+P` → `Developer: Reload Window`. That's it.

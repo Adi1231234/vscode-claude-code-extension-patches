@@ -492,9 +492,9 @@ And for the focus gate, in a live panel and in Node:
   -> 4.
 - **The click, end to end, on a real toast, with no settings change.** Five
   editor windows open. A toast raised by this patch's own `toast.ps1` (which
-  wrote `vscode-cursor-claude-code-extension-patches-2FFAB9556356.lnk`, target
+  wrote `vscode-claude-code-extension-patches-2FFAB9556356.lnk`, target
   `Code.exe`, argument the folder) was clicked by hand: the foreground moved to
-  **`vscode-cursor-claude-code-extension-patches`**, window count still five,
+  **`vscode-claude-code-extension-patches`**, window count still five,
   nothing opened inside it, no prompt and no console at any point. The control
   ran with `settings.json` restored byte-identical to its backup.
 - **The pieces separately.** `Code.exe "<folder>"` alone moved the foreground
