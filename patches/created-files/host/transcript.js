@@ -110,5 +110,5 @@ globalThis.__ccCFTranscript = globalThis.__ccCFTranscript || (function () {
         return found;
     }
 
-    return { kind: { create: create, take: take }, find: find, began: began };
+    return { kind: { create: create, take: take }, find: find, began: began, linesWith: linesWith };
 })();

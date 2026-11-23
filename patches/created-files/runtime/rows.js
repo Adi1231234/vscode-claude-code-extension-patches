@@ -22,15 +22,20 @@ window.__ccCFRows = window.__ccCFRows || (function () {
 
     function fileRow(row, send) {
         var s = shell(row, G.file, "cc-cf-file");
-        var name = el("span", "cc-cf-name", row.name);
+        var name = el("span", "cc-cf-name", row.name), mark = el("span", "cc-cf-agent");
         name.title = row.path;
         s.line.appendChild(name);
+        s.line.appendChild(mark);   // the subagent that made it (agents.js), empty for the chat's own
         s.line.appendChild(P.iconButton("cc-cf-reveal", "Show in file explorer", G.reveal, function () { send({ op: "reveal", path: row.path }); }));
         s.line.appendChild(P.iconButton("cc-cf-del", "Delete to Recycle Bin", G.trash, function () { send({ op: "delete", path: row.path }); }));
         function menu() { return M.forFile(row, s.line, send); }
         s.line.oncontextmenu = function (ev) { ev.preventDefault(); window.__ccMenu.show(name, menu()); };
         s.line.onkeydown = function (ev) { if (M.isMenuKey(ev)) { ev.preventDefault(); window.__ccMenu.show(name, menu()); } };
-        s.update = function () {};
+        s.update = function (r) {
+            var who = window.__ccCFAgents.markOf(window.__ccCFState.get(), r.agent);
+            window.__ccDom.setText(mark, who);
+            window.__ccDom.setAttr(mark, "title", who ? "Made by the subagent: " + who : null);
+        };
         return s;
     }
 

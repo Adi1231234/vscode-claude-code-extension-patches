@@ -61,6 +61,15 @@ began before its ledger, or that has no ledger, two more records are read
   Most of what old chats left sits there: 204,000 files in 103 of them. The folder
   is walked without opening a file, links are not followed, `.git` is skipped, and
   it is walked again when the dialog opens.
+- **Which agent made each file** (`host/agent*.js`, `runtime/agents.js`): the chat
+  itself, one of its subagents (named by what the chat called it), or "Unclear".
+  Subagents run inside the chat's own process, so the recorder notes the chat's
+  tool shell each file came from (`via`, a `spawn` line with its command line), and
+  the host pairs that shell with the call in the chat's or a subagent's transcript:
+  Bash by its exact command, background calls by task id, foreground PowerShell in
+  order. Read only while a dialog shows the chat. A chip row above the tree shows
+  one agent's files alone; a file a subagent made carries its name. The same as
+  adi-tools' `packages/created-files/agents` (its README has the rules).
 - **What Claude wrote itself** (`host/transcript.js`): each Write result in the
   chat's transcript, and its subagents'. Only lines naming `structuredPatch` are
   parsed: 7 GB of transcripts read in 32 s, the largest chat (505 MB) in 1.8 s.

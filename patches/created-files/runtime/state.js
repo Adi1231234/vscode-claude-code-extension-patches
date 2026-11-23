@@ -25,6 +25,8 @@ window.__ccCFState = window.__ccCFState || (function () {
         state.copied = 0;
         state.list = "";
         state.reports = 0;
+        state.agents = [];   // who made the files (host/agents.js): the chat itself, each subagent
+        state.agent = null;   // the one whose files alone the dialog shows, or null for all
     }
 
     function shown() { return state.running || state.total > 0; }
@@ -82,7 +84,8 @@ window.__ccCFState = window.__ccCFState || (function () {
 
     function onData(d) {
         if (!d || d.sessionId !== state.sid) return;
-        if (d.rows) state.rows = d.rows;   // only while the dialog is open, and only the newest
+        if (d.rows) { state.rows = d.rows; state.agent = d.agent || null; }   // only while the dialog is open, and only the newest
+        if (d.agents) state.agents = d.agents;
         else if (d.files) state.rows = flat(d.files);
         state.total = d.total || 0;
         state.bytes = d.bytes;   // undefined from a host older than sizes

@@ -78,6 +78,7 @@
         scroll.appendChild(rowsEl);
         scroll.appendChild(info);
         var sync = window.__ccCFRows.list(rowsEl, send);
+        var agents = window.__ccCFAgents.chips(send);
         var copy = footBtn(COPY, "cc-cf-copyall");
         copy.onclick = function () { if (state().total && !state().checking) send({ op: "copyAll" }); };
         copy.onmouseleave = copy.onblur = function () { copy.textContent = COPY; };
@@ -98,6 +99,7 @@
         function render() {
             var s = state();
             var focusInRow = rowsEl.contains(document.activeElement);
+            agents.sync(s);
             sync(s.rows);
             if (focusInRow && !rowsEl.contains(document.activeElement)) copy.focus();   // its row just left
             deleteAll.sync(s);
@@ -109,6 +111,7 @@
             if (s.copied) copy.textContent = "Copied " + plural(s.copied, "path", "paths");
         }
 
+        sh.box.appendChild(agents.el);
         sh.box.appendChild(scroll);
         sh.foot.appendChild(copy);
         sh.foot.appendChild(deleteAll.el);

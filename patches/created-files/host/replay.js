@@ -37,7 +37,9 @@ globalThis.__ccCFReplay = globalThis.__ccCFReplay || (function () {
     }
     /* Only what a reader needs of a line: one of these is kept per file a chat made. */
     function record(e, at) {
-        return { path: e.path, t: e.t, op: shared(e.op), image: shared(e.image), source: e.source, fid: e.fid, at: at };
+        var r = { path: e.path, t: e.t, op: shared(e.op), image: shared(e.image), source: e.source, fid: e.fid, at: at };
+        if (e.via) r.via = e.via;   // the chat's tool shell it came from (agents.js)
+        return r;
     }
     function withFid(base, fid) { return base.fid === fid ? base : Object.assign({}, base, { fid: fid }); }
 
@@ -48,7 +50,8 @@ globalThis.__ccCFReplay = globalThis.__ccCFReplay || (function () {
        two maps of every file the chat made held 36 MB of a 169,000-file chat for
        nothing (2026-11-20). The same as adi-tools' replay.mjs. */
     function create() {
-        var r = { alive: new Map(), gaps: 0, start: Infinity };
+        /* spawns: the tool shells the chat started (the recorder's "spawn" lines), by pid. */
+        var r = { alive: new Map(), gaps: 0, start: Infinity, spawns: new Map() };
         var gone = new Map(), deleted = [], next = 0, latest = 0;
 
         function forget(now) {
@@ -68,6 +71,7 @@ globalThis.__ccCFReplay = globalThis.__ccCFReplay || (function () {
             if (at > latest) latest = at;
             forget(at);
             if (e.op === "gap") r.gaps++;
+            if (e.op === "spawn" && Number.isInteger(e.pid)) r.spawns.set(e.pid, (r.spawns.get(e.pid) || []).concat({ pid: e.pid, t: t, cmd: e.cmd }));
             if (typeof e.path !== "string") return null;
             var key = e.path.toLowerCase(), before = r.alive.get(key);
             var made = before || gone.get(key);   // how the chat made the file, if it did
