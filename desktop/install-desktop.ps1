@@ -14,6 +14,7 @@ $ErrorActionPreference = "Stop"
 $root = $PSScriptRoot
 . (Join-Path $root "install\Msix.ps1")
 . (Join-Path $root "install\Shortcut.ps1")
+. (Join-Path $root "install\Swap.ps1")
 
 $home_ = Join-Path $env:LOCALAPPDATA "claude-code-patches"
 $appDir = Join-Path $home_ "app"
@@ -28,8 +29,7 @@ Write-Host "  latest release: $($latest.Version)"
 
 $have = $null
 if (Test-Path $marker) { try { $have = Get-Content $marker -Raw | ConvertFrom-Json } catch {} }
-$patched = (Test-Path $exe) -and (Select-String -Path (Join-Path $appDir "resources\app.asar") -Pattern "CCDESK" -Quiet -ErrorAction SilentlyContinue)
-if (-not $Force -and $have -and $have.version -eq $latest.Version -and $patched) {
+if (-not $Force -and $have -and $have.version -eq $latest.Version -and (Test-PatchedApp $appDir)) {
     Write-Host "  already on $($latest.Version), patched. nothing to do."
     exit 0
 }
@@ -42,16 +42,22 @@ if ($running) {
     exit 2
 }
 
+# Built and patched beside the live copy, which stays as it was until the new one
+# is complete (install/Swap.ps1).
+$staged = Get-StagingDir $appDir
 Write-Host "  fetching and extracting the app..."
-$n = Save-MsixApp $latest.Url $appDir
-Write-Host "  $n files extracted -> $appDir"
+$n = Save-MsixApp $latest.Url $staged
+Write-Host "  $n files extracted -> $staged"
 
 Write-Host "  patching..."
-& (Join-Path $root "apply.ps1") -InstallDir $appDir
+& (Join-Path $root "apply.ps1") -InstallDir $staged
 if ($LASTEXITCODE -ne 0 -and $null -ne $LASTEXITCODE) { Write-Error "apply.ps1 failed"; exit 1 }
 
-Copy-Item $dll (Join-Path $appDir "version.dll") -Force
+Copy-Item $dll (Join-Path $staged "version.dll") -Force
 Write-Host "  fingerprint shim placed."
+
+Install-StagedApp $staged $appDir
+Write-Host "  installed -> $appDir"
 
 $lnk = New-PatchedShortcut $exe "Claude (patched)"
 Write-Host "  shortcut: $lnk"
