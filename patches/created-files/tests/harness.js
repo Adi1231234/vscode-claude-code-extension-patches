@@ -49,6 +49,11 @@ function transcript(id, lines, opts) {
 const said = (t) => ({ type: 'user', message: { role: 'user', content: 'hi' }, timestamp: new Date(t).toISOString() });
 const wrote = (p, t, type) => ({ type: 'user', timestamp: new Date(t).toISOString(),
   toolUseResult: Object.assign(type ? { type } : {}, { filePath: p, structuredPatch: [], content: 'x' }) });
+/* A subagent's Write as its transcript has it: the call, then its result, with no toolUseResult (CLI 2.1.330). */
+const called = (p, t, id, result) => [
+  { type: 'assistant', timestamp: new Date(t).toISOString(), message: { role: 'assistant', content: [{ type: 'tool_use', id, name: 'Write', input: { file_path: p, content: 'x' } }] } },
+  { type: 'user', timestamp: new Date(t).toISOString(), message: { role: 'user', content: [{ type: 'tool_result', tool_use_id: id, content: result || 'File created successfully at: ' + p }] } },
+];
 const scratch = (id, ...parts) => touch('temp', 'claude', 'C--proj', id, 'scratchpad', ...parts);
 
 function repo(name) {
@@ -127,4 +132,4 @@ async function run(tests) {
   process.exit(failed ? 1 : 0);
 }
 
-module.exports = { root, ledgerDir, trashed, editor, touch, ledger, events, transcript, said, wrote, scratch, repo, panel, send, until, open, names, wait, run };
+module.exports = { root, ledgerDir, trashed, editor, touch, ledger, events, transcript, said, wrote, called, scratch, repo, panel, send, until, open, names, wait, run };

@@ -3,7 +3,7 @@
 const assert = require('assert');
 const fs = require('fs');
 const path = require('path');
-const { root, touch, events, transcript, said, wrote, scratch, repo, send, until, open, names, run } = require('./harness');
+const { root, touch, events, transcript, said, wrote, called, scratch, repo, send, until, open, names, run } = require('./harness');
 
 const OLD = Date.UTC(2026, 9, 1), HOUR = 3600000;
 const now = () => Date.now();
@@ -49,10 +49,11 @@ run({
     assert.deepStrictEqual(names(await listed('old-5')), ['build.log']);
   },
 
-  async 'a subagent writes in its own transcript, and a moved transcript is found'() {
-    const a = touch('agent', 'made-by-agent.txt'), b = touch('agent', 'made-by-chat.txt');
+  async 'a subagent writes in its own transcript, as a call and its result, and a moved transcript is found'() {
+    const a = touch('agent', 'made-by-agent.txt'), b = touch('agent', 'made-by-chat.txt'), c = touch('agent', 'edited-by-agent.txt');
     transcript('old-6', [said(OLD), wrote(b, now(), 'create')], { slug: 'C--proj--claude-worktrees-x' });
-    transcript('old-6', [said(OLD), wrote(a, now(), 'create')], { agent: 'a1', slug: 'C--proj--claude-worktrees-x' });
+    transcript('old-6', [said(OLD), ...called(a, now(), 't1'), ...called(c, now(), 't2', 'The file has been updated successfully.')],
+      { agent: 'a1', slug: 'C--proj--claude-worktrees-x' });
     assert.deepStrictEqual(names(await listed('old-6')), ['made-by-agent.txt', 'made-by-chat.txt']);
   },
 
