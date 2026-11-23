@@ -13,7 +13,7 @@ import { homedir } from 'node:os';
 import { join } from 'node:path';
 import { readdirSync } from 'node:fs';
 
-const DIRS = ['.vscode', '.vscode-insiders', '.cursor', '.vscode-oss']
+const DIRS = ['.vscode', '.vscode-insiders', '.vscode-oss']
   .map((d) => join(homedir(), d, 'extensions'))
   .filter((d) => existsSync(d));
 
@@ -33,7 +33,7 @@ function bundles() {
 /* The extension host is a Code.exe utility process; the session processes it
    spawned are what say which extension folder it loaded. */
 function hosts() {
-  const ps = `Get-CimInstance Win32_Process -Filter "Name='Code.exe' OR Name='Cursor.exe'" |
+  const ps = `Get-CimInstance Win32_Process -Filter "Name='Code.exe'" |
     Where-Object { $_.CommandLine -match 'node.mojom.NodeService' } | ForEach-Object {
       $kids = @(Get-CimInstance Win32_Process -Filter ("ParentProcessId=" + $_.ProcessId) |
                 Where-Object { $_.Name -eq 'claude.exe' })

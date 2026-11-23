@@ -1,5 +1,5 @@
 # ELECTRON_RUN_AS_NODE leak fix. The extension host runs with
-# ELECTRON_RUN_AS_NODE=1 (VS Code and Cursor alike - see README.md); the extension
+# ELECTRON_RUN_AS_NODE=1 (upstream VS Code behaviour - see README.md); the extension
 # re-spreads process.env unfiltered into every env it builds for the child CLI,
 # leaking the flag into every subprocess the CLI spawns.
 # Strip it at each construction site. Each site is optional (some may not

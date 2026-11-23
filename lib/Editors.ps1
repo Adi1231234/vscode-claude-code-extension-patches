@@ -1,14 +1,12 @@
-# Where each supported editor keeps its user extensions.
+# Where each supported VS Code build keeps its user extensions.
 #
-# The Claude Code extension ships the same bundles to Cursor and to VS Code, so a
-# patch never cares which editor it is running against - only the *location* of
-# the install differs. That knowledge lives here alone; Extension.ps1 builds the
-# $Ctx for one install and apply.ps1 runs the patches over each.
-#
-# Adding an editor = adding a row below.
+# The patches are for VS Code. Its builds (stable, Insiders, VSCodium) get the
+# same bundles, so a patch never cares which one it is running against - only the
+# *location* of the install differs. That knowledge lives here alone;
+# Extension.ps1 builds the $Ctx for one install and apply.ps1 runs the patches
+# over each.
 
 $script:EditorRoots = @(
-    @{ Editor = 'Cursor';           Dir = '.cursor' }
     @{ Editor = 'VS Code';          Dir = '.vscode' }
     @{ Editor = 'VS Code Insiders'; Dir = '.vscode-insiders' }
     @{ Editor = 'VSCodium';         Dir = '.vscode-oss' }

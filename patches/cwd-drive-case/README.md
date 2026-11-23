@@ -14,8 +14,8 @@ Both paths are the same directory. They differ only in the case of the drive let
 
 ## Root cause (proven)
 
-1. **VS Code / Cursor produce a lower-cased drive letter.** Every workspace entry in
-   `%APPDATA%\Cursor\User\workspaceStorage\*\workspace.json` (VS Code: `%APPDATA%\Code\...`) is stored as
+1. **VS Code produces a lower-cased drive letter.** Every workspace entry in
+   `%APPDATA%\Code\User\workspaceStorage\*\workspace.json` is stored as
    `file:///c%3A/...`, and `URI.fsPath` renders that as `c:\...`. The extension
    passes it straight through: `Spawning Claude with SDK query function - cwd: c:\...`.
 2. **Node does not normalise a spawn `cwd`.** A child spawned with `cwd: "c:\\..."`

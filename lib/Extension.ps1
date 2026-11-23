@@ -13,7 +13,7 @@ function Get-ExtensionVersion {
 
 function Find-ClaudeExtension {
     param(
-        [string]$ExtensionsDir = (Join-Path $env:USERPROFILE '.cursor\extensions'),
+        [string]$ExtensionsDir = (Join-Path $env:USERPROFILE '.vscode\extensions'),
         [string]$Editor = (Get-EditorNameFromRoot $ExtensionsDir)
     )
 
@@ -83,8 +83,8 @@ function Find-ClaudeExtension {
     return $ctx
 }
 
-# One $Ctx per editor that has the extension installed (Cursor and VS Code side by
-# side both get patched). An editor without it is reported and skipped, not fatal.
+# One $Ctx per VS Code build that has the extension installed (stable and
+# Insiders side by side both get patched). An editor without it is reported and skipped, not fatal.
 function Find-ClaudeExtensions {
     foreach ($e in Get-EditorExtensionRoots) {
         try { Find-ClaudeExtension -ExtensionsDir $e.Root -Editor $e.Editor }

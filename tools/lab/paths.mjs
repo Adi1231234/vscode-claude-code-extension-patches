@@ -42,7 +42,7 @@ export function layout(version, port) {
 /* The version to test, when none was asked for: the newest one already
    installed on this machine, so the lab mirrors what the user actually runs. */
 export function detectVersion() {
-    const dirs = ['.vscode', '.cursor', '.vscode-insiders']
+    const dirs = ['.vscode', '.vscode-insiders']
         .map((d) => join(homedir(), d, 'extensions'))
         .filter((d) => existsSync(d))
         .flatMap((d) => readdirSync(d));

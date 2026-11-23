@@ -40,12 +40,13 @@ const EDITOR_SETTINGS = {
 
 const CLI_SETTINGS = { remoteControlAtStartup: false };
 
-/* Each editor reads argv.json from its own folder under the home directory, and
-   the lab's home is redirected, so writing all three costs nothing and is what
-   makes `--code <a fork>` work: Cursor reads `.cursor/argv.json` and never looks
-   at `.vscode/argv.json`, so with only the latter the editor starts and simply
-   never opens the CDP port - which reads as the lab being broken. */
-const ARGV_DIRS = ['.vscode', '.cursor', '.vscode-insiders'];
+/* Each VS Code build reads argv.json from its own folder under the home
+   directory, and the lab's home is redirected, so writing both costs nothing and
+   is what makes `--code <Insiders>` work: Insiders reads
+   `.vscode-insiders/argv.json` and never looks at `.vscode/argv.json`, so with
+   only the latter it starts and simply never opens the CDP port - which reads as
+   the lab being broken. */
+const ARGV_DIRS = ['.vscode', '.vscode-insiders'];
 
 export async function write(lay, port) {
     await mkdir(join(lay.ud, 'User'), { recursive: true });   /* also creates lay.portable */

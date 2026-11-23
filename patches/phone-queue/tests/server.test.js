@@ -41,7 +41,7 @@ function post(url, body, raw) {
 
 /* A panel's webview: records posts, and answers a run the way link.js does.
    A closed one resolves false, as VS Code's ExtHostWebview does - it does not
-   throw (read in three VS Code builds and in Cursor). */
+   throw (read in three VS Code builds). */
 function panel(name, answer, from) {
   const wv = { name, posted: [], postMessage(m) {
     if (wv.dead) return Promise.resolve(false);

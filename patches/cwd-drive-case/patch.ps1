@@ -1,5 +1,5 @@
 # Sessions started from the IDE cannot be resumed: "cannot resume into worktree".
-# VS Code / Cursor derive every workspace path from a file:// URI, and URI.fsPath
+# VS Code derives every workspace path from a file:// URI, and URI.fsPath
 # lower-cases the drive letter, so the extension launches the CLI in "c:\project".
 # git reports the same directory as "C:/project", and Claude Code >= 2.1.222
 # compares the two case-sensitively when it adopts an isolation worktree -> it

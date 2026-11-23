@@ -1,10 +1,10 @@
 # One-line bootstrap. Downloads this repo to a temp folder, runs the patch, cleans up.
 #
 #   # both (VS Code extension + desktop app) - the default, same as always:
-#   irm https://raw.githubusercontent.com/Adi1231234/vscode-cursor-claude-code-extension-patches/master/install.ps1 | iex
+#   irm https://raw.githubusercontent.com/Adi1231234/vscode-claude-code-extension-patches/master/install.ps1 | iex
 #
 #   # just one of them - pass -Scope as a flag (vscode / desktop / all):
-#   & ([scriptblock]::Create((irm https://raw.githubusercontent.com/Adi1231234/vscode-cursor-claude-code-extension-patches/master/install.ps1))) -Scope desktop
+#   & ([scriptblock]::Create((irm https://raw.githubusercontent.com/Adi1231234/vscode-claude-code-extension-patches/master/install.ps1))) -Scope desktop
 #
 # The plain pipe form keeps today's behaviour (Scope defaults to 'all'); the
 # scriptblock form is how PowerShell passes a flag to a downloaded script.
@@ -15,7 +15,7 @@ param(
     [string]$Scope = 'all'
 )
 $ErrorActionPreference = 'Stop'
-$repo   = 'Adi1231234/vscode-cursor-claude-code-extension-patches'
+$repo   = 'Adi1231234/vscode-claude-code-extension-patches'
 $branch = 'master'
 
 # TLS 1.2 for stock Windows PowerShell 5.1; process-scope bypass so the downloaded

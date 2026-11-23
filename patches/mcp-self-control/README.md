@@ -77,7 +77,7 @@ for it.
 
 ## Limits
 
-- VS Code and Cursor only. The terminal CLI and the desktop app have no
+- VS Code only. The terminal CLI and the desktop app have no
   `claude-vscode` server.
 - The host half: `extension.js` loads once per window, so a window open across
   `apply.ps1` only gets the tools after `Developer: Reload Window`.

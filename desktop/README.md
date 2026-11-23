@@ -1,6 +1,6 @@
 # Desktop patches (Claude Desktop, Windows)
 
-Patches for the **Claude Desktop app**, the sibling of the VS Code / Cursor
+Patches for the **Claude Desktop app**, the sibling of the VS Code
 patches one directory up. Same idea - edit the shipped, minified bundle in
 place - but the app is an Electron program, not a VS Code extension, so the
 injection point and the launch barrier are different. Read this before changing

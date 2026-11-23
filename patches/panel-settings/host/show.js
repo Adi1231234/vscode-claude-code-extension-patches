@@ -17,10 +17,10 @@ globalThis.__ccToastShow = globalThis.__ccToastShow || (function () {
     var appId;
 
     /* The running editor's AppUserModelID, so the toast wears that editor's name
-       and icon rather than PowerShell's. Both editors publish it in the
-       product.json beside their app root (Microsoft.VisualStudioCode /
-       Anysphere.Cursor), which is how this stays editor-agnostic: the value is
-       read from whichever editor is running, never branched on. Resolved once;
+       and icon rather than PowerShell's. Every VS Code build publishes it in
+       the product.json beside its app root (Microsoft.VisualStudioCode for
+       stable), which is how this stays build-agnostic: the value is read from
+       whichever build is running, never branched on. Resolved once;
        "" is a valid answer and means the script falls back on its own. */
     function editorAppId() {
         if (appId !== undefined) return appId;
