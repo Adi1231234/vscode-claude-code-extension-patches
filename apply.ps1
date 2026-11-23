@@ -1,6 +1,6 @@
-# Claude Code (Cursor / VS Code) extension patcher - orchestrator.
+# Claude Code VS Code extension patcher - orchestrator.
 #
-# Discovers every install of the extension - Cursor, VS Code, Insiders, VSCodium
+# Discovers every install of the extension - VS Code, Insiders, VSCodium
 # (see lib/Editors.ps1) - and runs each patch in `patches/<name>/` against each.
 # Every patch is a self-contained folder that defines a single `Invoke-Patch`
 # function taking the shared $Ctx (see lib/Extension.ps1). Patches are dot-sourced
@@ -27,7 +27,7 @@ Get-ChildItem (Join-Path $here 'lib') -Filter *.ps1 | ForEach-Object { . $_.Full
 
 $installs = if ($ExtensionsDir) { @(Find-ClaudeExtension -ExtensionsDir $ExtensionsDir) }
             else                { @(Find-ClaudeExtensions) }
-if (-not $installs) { throw "Claude Code extension not found in any editor under $env:USERPROFILE (.cursor / .vscode / .vscode-insiders / .vscode-oss)" }
+if (-not $installs) { throw "Claude Code extension not found in any editor under $env:USERPROFILE (.vscode / .vscode-insiders / .vscode-oss)" }
 
 # Explicit run order (see note above about the webview-script chain).
 $order = @(

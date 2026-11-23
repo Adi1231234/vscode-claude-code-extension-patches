@@ -3,7 +3,7 @@
      webview. The queue is keyed by the active session id (read off the root
      component's props) so each chat keeps its own queue, and it follows the
      user when they switch sessions. A restored queue is always parked
-     (paused) - nothing auto-fires when Cursor reopens; the user releases it
+     (paused) - nothing auto-fires when the editor reopens; the user releases it
      with the panel's play button. */
   var _curSid = null, _saveT = null, _sidWarned = 0;
 

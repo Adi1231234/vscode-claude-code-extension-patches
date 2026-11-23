@@ -7,7 +7,7 @@
    session id is private to that conversation; that is what the queue uses.)
 
    Nothing here runs at load: touching localStorage while the bundle is still
-   evaluating breaks the Cursor webview, so every access sits behind a function
+   evaluating breaks the webview, so every access sits behind a function
    the panel only calls once it is up. The stored shape is versioned the way the
    saved queues are, and every read has to survive a null, a parse error and a
    value written by a future version. */

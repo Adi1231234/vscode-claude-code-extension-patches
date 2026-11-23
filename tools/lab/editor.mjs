@@ -38,30 +38,20 @@ export function codeExe() {
     return hit;
 }
 
-/* The CLI shim beside the executable, named after it: Code.exe -> bin/code.cmd,
-   Cursor.exe -> bin/cursor.cmd. It was hard-coded to code.cmd, which is the one
-   thing in this repository that was VS Code only - every patch here supports
-   Cursor, and --code <path to Cursor.exe> failed on "The system cannot find the
-   path specified" rather than on anything real.
-
-   That matters beyond tidiness: VS Code holds a global `<name>-updating` mutex
-   while an installer is running, and every launch of *that* editor blocks for as
-   long as it is held - which on a machine with windows open is hours. A fork has
-   its own mutex, so pointing the lab at one is the way to keep testing.
-
-   Two things vary, so both are searched: the shim is named after the executable,
-   and it does not sit in the same place. VS Code puts code.cmd in `bin` beside
-   Code.exe; Cursor puts cursor.cmd under `resources/app/bin`. */
+/* The CLI shim in `bin` beside the executable: Code.exe -> bin/code.cmd,
+   "Code - Insiders.exe" -> bin/code-insiders.cmd. Insiders matters: stable VS
+   Code holds a global `<name>-updating` mutex while an installer is running, and
+   every launch of it blocks for as long as it is held - which on a machine with
+   windows open is hours. Insiders has its own mutex, so pointing the lab at it
+   is the way to keep testing. */
 function cliFor(exe) {
-    const name = basename(exe).replace(/\.exe$/i, '').toLowerCase();
-    const dirs = [join(exe, '..', 'bin'), join(exe, '..', 'resources', 'app', 'bin')];
-    for (const d of dirs) {
-        for (const n of [`${name}.cmd`, 'code.cmd']) {
-            const p = join(d, n);
-            if (existsSync(p)) return p;
-        }
+    const name = basename(exe).replace(/\.exe$/i, '').toLowerCase().replace(/ - /g, '-');
+    const dir = join(exe, '..', 'bin');
+    for (const n of [`${name}.cmd`, 'code.cmd']) {
+        const p = join(dir, n);
+        if (existsSync(p)) return p;
     }
-    throw new Error(`no CLI shim beside ${exe} - looked for ${name}.cmd and code.cmd in ${dirs.join(' and ')}`);
+    throw new Error(`no CLI shim beside ${exe} - looked for ${name}.cmd and code.cmd in ${dir}`);
 }
 
 /* `Code.exe --install-extension` never returns - the executable is the GUI, and

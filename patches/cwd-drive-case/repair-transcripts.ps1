@@ -1,7 +1,7 @@
 # One-off repair for transcripts written before the cwd-drive-case patch.
 #
 # Sessions that entered an isolation worktree from the IDE recorded their paths
-# with the lower-cased drive letter VS Code / Cursor hand out, which Claude Code
+# with the lower-cased drive letter VS Code hands out, which Claude Code
 # >= 2.1.222 refuses to resume (see README.md). This rewrites the drive letter in
 # the worktree-state records, and nothing else: every other line is left byte for
 # byte as it was. Not run by apply.ps1 - this touches session history, not the

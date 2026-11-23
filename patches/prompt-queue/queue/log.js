@@ -3,9 +3,9 @@
      localStorage so logs survive reloads. A modal (the log button by the send
      button) shows them - screenshot/copy it. Deliberately touches nothing
      special: wrapping acquireVsCodeApi or injecting a full logger broke the
-     Cursor webview, so this stays minimal. */
+     webview, so this stays minimal. */
   /* NOTE: do NOT touch localStorage (or anything but function defs) at load -
-     load-time localStorage access breaks the Cursor webview. All storage access
+     load-time localStorage access breaks the webview. All storage access
      is lazy: inside ccLog (runs after load) and openLogModal (on click). */
   var _ccLogs = [];
   /* Newline as a char code, never as a backslash-n escape: this file is injected

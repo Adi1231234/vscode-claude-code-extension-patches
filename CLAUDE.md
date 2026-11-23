@@ -1,6 +1,6 @@
 # Project guide (for contributors and agents)
 
-Patches for the Claude Code VS Code / Cursor extension. Each patch edits the
+Patches for the Claude Code VS Code extension. Each patch edits the
 bundled, minified `extension.js` / `webview/index.js` / `webview/index.css`
 in place. Read this before changing anything so the structure stays clean.
 
@@ -13,7 +13,7 @@ in place. Read this before changing anything so the structure stays clean.
   - `Regression.ps1` - a run never writes an install with fewer working patches than it found. The patch guards it carries are read before the run; if any is gone afterwards the held bundles are dropped, the install stays as it was, and the run fails naming the patch. Only patches the run applies count (`-Skip` and `$order` are choices), and a fresh extension folder takes a partial run. On 2026-10-09 an `install.ps1` run from a master with a bug in it wrote 47 of 54 patches over a full install and took RTL away.
   - `Anchor.ps1` - `Find-IdentifierAnchored` / `Find-NearLiteral`, for an anchor that opens with a captured identifier. Such a pattern has no literal for the regex engine to jump to and is tried at every position of the bundle (1.2 s a pass over 5 MB, measured); these find the literal after it with an ordinal search and run the pattern only there - same matches, a few ms.
   - `Ui.ps1` - `Write-Head/Ok/Skip/Miss/Info` console helpers.
-  - `Editors.ps1` - the table of supported editors and where each keeps its extensions (`.cursor`, `.vscode`, `.vscode-insiders`, `.vscode-oss`). The only place that knows about editors; add an editor = add a row.
+  - `Editors.ps1` - the table of supported VS Code builds and where each keeps its extensions (`.vscode`, `.vscode-insiders`, `.vscode-oss`). The only place that knows about them; add a build = add a row. The project is VS Code only.
   - `Extension.ps1` - `Find-ClaudeExtension` (one dir) / `Find-ClaudeExtensions` (every editor) -> the `$Ctx` object (see below).
   - `CssModules.ps1` - the app's class names, exactly: every CSS-module map in
     the webview bundle, read once into `$Ctx.CssModules`, and `{{key}}` /
@@ -88,7 +88,7 @@ in place. Read this before changing anything so the structure stays clean.
 ## The `$Ctx` contract
 
 `Find-ClaudeExtension` returns a hashtable every patch receives:
-`Editor` (display name, e.g. `Cursor` / `VS Code`), `Dir`, `Name`, `Version`,
+`Editor` (display name, e.g. `VS Code` / `VS Code Insiders`), `Dir`, `Name`, `Version`,
 `Js` (extension.js path), `WebJs` (webview/index.js path),
 `Css` (webview/index.css path), plus detected minified identifiers
 `Nonce`, `MessageInputClass`, `MentionMirrorClass`, `PvHash`, `PillClass`.
@@ -120,9 +120,9 @@ Need another minified name? Detect it once in `Extension.ps1` and add it to `$Ct
 
 ## Non-negotiable conventions
 
-- **Editor-agnostic.** Cursor and VS Code get the *same* bundles, so a patch never
-  branches on the editor: no `.cursor`/`.vscode` path anywhere outside `lib/Editors.ps1`,
-  and no editor name in user-visible strings ("the editor", not "Cursor"). Everything a
+- **Build-agnostic.** Every VS Code build gets the *same* bundles, so a patch never
+  branches on the build: no `.vscode` path anywhere outside `lib/Editors.ps1`, and no
+  build name in user-visible strings ("the editor", not "VS Code Insiders"). Everything a
   patch needs about the install is already on `$Ctx`.
 - **Guard marker.** Every patch writes a unique `/* NAME */` comment and returns early via `Write-Skip` if it is already present. This is what makes re-running safe.
 - **Fail-safe.** If an anchor is missing, `Write-Miss` and return / skip that site - never write a partial or guessed edit. A missing anchor must leave the file untouched.
@@ -411,7 +411,7 @@ Need another minified name? Detect it once in `Extension.ps1` and add it to `$Ct
   `127.0.0.1` link became an editor tab; off, it went to the browser. The fix is
   `"workbench.browser.openLocalhostLinks": false` in the user's settings (per
   profile), not a patch.
-- **Never wrap `window.acquireVsCodeApi`.** Reassigning it (to intercept the VS Code messaging api) silently breaks the whole Cursor webview - the panel renders blank. Read what you need from the session object or the webview URL (`?session=<uuid>` carries the conversation id) instead.
+- **Never wrap `window.acquireVsCodeApi`.** Reassigning it (to intercept the VS Code messaging api) silently breaks the whole webview - the panel renders blank. Read what you need from the session object or the webview URL (`?session=<uuid>` carries the conversation id) instead.
 - **A patch's two halves do not load at the same moment, and the host half is
   the one that goes stale.** `webview/index.js` is read when a panel opens, so
   the panel runs what the last `apply.ps1` wrote. `extension.js` is loaded
@@ -602,8 +602,8 @@ Need another minified name? Detect it once in `Extension.ps1` and add it to `$Ct
 1. Download the exact pristine version from OpenVSX, e.g.
    `https://open-vsx.org/api/Anthropic/claude-code/win32-x64/<version>/file/Anthropic.claude-code-<version>@win32-x64.vsix`
    (it is a zip; the files are under `extension/`).
-2. Place them in `<tmp>/.cursor/extensions/anthropic.claude-code-<version>-win32-x64/`
-   (and/or `<tmp>/.vscode/extensions/...` - discovery patches every editor it finds).
+2. Place them in `<tmp>/.vscode/extensions/anthropic.claude-code-<version>-win32-x64/`
+   (and/or `<tmp>/.vscode-insiders/extensions/...` - discovery patches every build it finds).
 3. Run with a redirected home so nothing real is touched:
    `$env:USERPROFILE='<tmp>'; ./apply.ps1`
    (or point it at one dir: `./apply.ps1 -ExtensionsDir '<tmp>/.vscode/extensions'`)
@@ -668,11 +668,6 @@ something looks like - never as the way to find out what the panel is doing.
   so closing one window and reopening it just rejoins the process that is already
   running and nothing changes. The port appears only after every window is closed
   and the editor starts cold.
-- **Cursor does not support this** - its argv.json allowlist has only the four base
-  switches. There, pass `--remote-debugging-port=<n>` on the command line, and only
-  with no instance already running: a second launch hands its args to the running
-  instance and exits, so its port answers CDP for about a second and then dies. A
-  single probe sees that as success.
 - `http://127.0.0.1:<n>/json/list` then lists one `page` per window (titled by
   `window.title`) plus one `iframe` per webview, tagged
   `extensionId=Anthropic.claude-code`. That iframe is the webview *shell*

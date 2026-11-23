@@ -126,7 +126,7 @@ edge as a stop, or that Escape swallowed the next real finish.
 
 The panel sends one message - `{type:"__ccnotify", op:"done", title, body}` -
 over `connection.value.send()`, the app's own back-channel and the only
-sanctioned route (wrapping `acquireVsCodeApi` renders the Cursor panel blank).
+sanctioned route (wrapping `acquireVsCodeApi` renders the panel blank).
 `Add-WebviewMessageHook` puts a returning guard at the top of every chat
 surface's `onDidReceiveMessage`, so the message is answered before the app's
 protocol switch can log it as unknown.
@@ -144,10 +144,10 @@ module, so the host spawns PowerShell. Three decisions worth keeping:
   the script, so no conversation title can break the toast's XML or inject
   anything. Verified with a body of `a <script> & "quotes"`.
 - **The toast wears the running editor's identity, without branching on the
-  editor.** Both editors publish a `win32AppUserModelId` in the `product.json`
-  beside `vscode.env.appRoot` (`Microsoft.VisualStudioCode` / `Anysphere.Cursor`),
-  so the host reads it from whichever editor it is running in and the toast
-  carries that editor's name and icon instead of PowerShell's. If it cannot be
+  build.** Every VS Code build publishes a `win32AppUserModelId` in the
+  `product.json` beside `vscode.env.appRoot` (`Microsoft.VisualStudioCode` for
+  stable), so the host reads it from whichever build it is running in and the
+  toast carries that build's name and icon instead of PowerShell's. If it cannot be
   read, the script falls back to the PowerShell AppID, which is always
   registered and still shows.
 
@@ -361,7 +361,7 @@ beside it, already have it.
 
 Nothing touches `localStorage` at load; every access sits behind a function the
 panel calls once it is up, because touching it while the bundle is still
-evaluating breaks the Cursor webview.
+evaluating breaks the webview.
 
 A write that fails (a full quota) puts the switch straight back rather than
 leaving it showing a state that will not survive a reload.

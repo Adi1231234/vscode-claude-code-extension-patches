@@ -1,12 +1,12 @@
 <div align="center">
 
-# 🩹 Claude Code — VS Code / Cursor Extension Patches
+# 🩹 Claude Code — VS Code Extension Patches
 
 **One command applies a folder of small, self-contained patches that fix real bugs in the Claude Code extension — every fix proven from runtime logs, not guesswork.**
 
 ![Platform](https://img.shields.io/badge/platform-Windows-0078D6?logo=windows&logoColor=white)
 ![PowerShell](https://img.shields.io/badge/PowerShell-5391FE?logo=powershell&logoColor=white)
-![Editor](https://img.shields.io/badge/Cursor%20%2F%20VS%20Code-000000?logo=visualstudiocode&logoColor=white)
+![Editor](https://img.shields.io/badge/VS%20Code-000000?logo=visualstudiocode&logoColor=white)
 ![Fixes](https://img.shields.io/badge/bug%20fixes-6%20proven%20from%20logs-2ea44f)
 ![Fail-safe](https://img.shields.io/badge/patching-fail--safe%20%26%20idempotent-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
@@ -31,7 +31,7 @@ Then reload: `Ctrl+Shift+P` → `Developer: Reload Window`. That's it.
 
 It downloads this repo to a temp folder, runs `apply.ps1`, and cleans up. **Idempotent** — already-applied patches skip, so re-run it after every extension update. *(Cloned the repo instead? Just run `./apply.ps1`.)*
 
-**Both editors at once.** It patches the newest `anthropic.claude-code-*` in **every** editor that has it installed — `%USERPROFILE%\.cursor\extensions`, `.vscode`, `.vscode-insiders`, `.vscode-oss` — so a machine with Cursor *and* VS Code gets both in one run; an editor without the extension is just reported and skipped. Custom `--extensions-dir`? `./apply.ps1 -ExtensionsDir '<path>'`.
+**Every VS Code build at once.** It patches the newest `anthropic.claude-code-*` in each of `%USERPROFILE%\.vscode\extensions`, `.vscode-insiders` and `.vscode-oss` that has it installed; a build without the extension is just reported and skipped. Custom `--extensions-dir`? `./apply.ps1 -ExtensionsDir '<path>'`.
 
 ## 🗂️ Layout
 
