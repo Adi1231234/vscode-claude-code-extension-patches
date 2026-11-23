@@ -44,7 +44,7 @@ function Invoke-Patch {
     # the modal before the dialog.
     $libs = @('ccStore.js', 'ccDom.js', 'ccWatch.js', 'ccSession.js', 'ccModal.js', 'ccMenu.js', 'ccCopyText.js') |
         ForEach-Object { Get-LibJsPath $_ }
-    $mine = @('icon.js', 'link.js', 'size.js', 'state.js', 'glyphs.js', 'parts.js', 'feedback.js', 'rowMenu.js', 'dirRow.js', 'rows.js', 'dialog.js') |
+    $mine = @('icon.js', 'link.js', 'size.js', 'state.js', 'glyphs.js', 'parts.js', 'feedback.js', 'rowMenu.js', 'dirRow.js', 'agents.js', 'rows.js', 'dialog.js') |
         ForEach-Object { Join-Path $PSScriptRoot "runtime/$_" }
     $runtime = (($libs + $mine) | ForEach-Object { Read-Text $_ }) -join "`n"
 

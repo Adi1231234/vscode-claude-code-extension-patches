@@ -50,6 +50,7 @@ globalThis.__ccCFFiles = globalThis.__ccCFFiles || (function () {
                the list's name) is made once per change. */
             files: function () { return listed || (listed = Array.from(rows.values())); },
             gaps: function () { return source.replay.gaps; },
+            spawns: function () { return source.replay.spawns || new Map(); },
             unrecorded: function () { return !!(source.unrecorded && source.unrecorded()); },
             pending: function () { return unknown.length; },
             bytes: function () { return bytes; }

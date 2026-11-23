@@ -13,7 +13,7 @@
    outside any chat leaves no line). Acting on a path is checked against a fresh
    look at that path. */
 globalThis.__ccCF = globalThis.__ccCF || (function () {
-    var L = globalThis.__ccCFLedger, V = globalThis.__ccCFViews;
+    var L = globalThis.__ccCFLedger, V = globalThis.__ccCFViews, A = globalThis.__ccCFAgents;
     var SETTLE_MS = 500, FIRST_LOOK = 600, BATCH = 2000;
     var byId = new Map(), ofView = new Map(), known = new WeakSet();
     var timers = new Map(), latest = new Map();
@@ -31,11 +31,18 @@ globalThis.__ccCF = globalThis.__ccCF || (function () {
             type: "ccCFData", sessionId: id, total: data.files.length, bytes: data.bytes,
             checking: data.checking, incomplete: data.incomplete, unrecorded: data.unrecorded, running: wasRecording, list: data.list
         }, extra);
-        (only ? [only] : views).forEach(function (wv) {
-            V.rowsFor(id, wv, data.files).then(function (shown) {
-                post(wv, shown ? Object.assign({ rows: shown.rows }, msg) : msg);   // none: closed, or newer rows on the way
-                if (shown && shown.unlooked.length) refresh(id, null, { paths: shown.unlooked });
-            }, function () { post(wv, msg); });
+        // Which agent made each file (agents.js): read only while a dialog shows the chat - it reads the transcripts.
+        var targets = only ? [only] : Array.from(views);
+        var asked = targets.some(V.isOpen) ? A.groups(id, data).catch(function () { return null; }) : Promise.resolve(null);
+        asked.then(function (groups) {
+            var agents = groups ? groups.list.map(function (g) { return { key: g.key, label: g.label, type: g.type, count: g.count, bytes: g.bytes }; }) : [];
+            targets.forEach(function (wv) {
+                V.rowsFor(id, wv, data.files, groups).then(function (shown) {
+                    var base = Object.assign({ agents: agents }, msg);
+                    post(wv, shown ? Object.assign({ rows: shown.rows, agent: shown.agent }, base) : base);   // none: closed, or newer rows on the way
+                    if (shown && shown.unlooked.length) refresh(id, null, { paths: shown.unlooked });
+                }, function () { post(wv, msg); });
+            });
         });
     }
 
@@ -92,6 +99,7 @@ globalThis.__ccCF = globalThis.__ccCF || (function () {
         latest.delete(id);
         L.forget(id);
         V.forget(id);
+        A.forget(id);
         if (!byId.size) folder.stop();
     }
 
@@ -122,6 +130,7 @@ globalThis.__ccCF = globalThis.__ccCF || (function () {
         else if (msg.op === "view") { V.setOpen(view.webview, msg.open); if (msg.open) deliver(id, null, view.webview); }
         else if (msg.op === "toggle") { V.toggle(view.webview, msg.key); deliver(id, null, view.webview); }
         else if (msg.op === "more") { V.more(view.webview, msg.key); deliver(id, null, view.webview); }
+        else if (msg.op === "agent") { V.pick(view.webview, msg.key); deliver(id, null, view.webview); }
         else if (msg.op === "reveal") acting.reveal(id, msg.path);
         else if (msg.op === "copyAll") acting.copyAll(id);
         else if (msg.op === "copyItems") acting.copyItems(id, V.itemsOf(id, msg.path), String(msg.key), view.webview);
