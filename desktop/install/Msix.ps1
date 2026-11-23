@@ -10,7 +10,9 @@ function Get-LatestMsix {
 }
 
 # Download the .msix and extract only its app/ subtree into $destApp (which is
-# emptied first). Returns the number of files written.
+# emptied first). Returns the number of files written. $destApp is a staging
+# folder, never the live copy: install-desktop.ps1 swaps it in only once it is
+# complete and patched (install/Swap.ps1).
 function Save-MsixApp([string]$url, [string]$destApp) {
     Add-Type -AssemblyName System.IO.Compression.FileSystem
     $tmp = Join-Path ([System.IO.Path]::GetTempPath()) ("ccd-msix-" + [guid]::NewGuid().ToString("N"))
