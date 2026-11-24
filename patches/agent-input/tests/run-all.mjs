@@ -7,7 +7,7 @@ import { fileURLToPath } from 'node:url';
 
 const here = dirname(fileURLToPath(import.meta.url));
 let failed = 0;
-for (const f of ['deliver.test.js', 'agent-store.test.js', 'mods.test.js']) {
+for (const f of ['deliver.test.js', 'agent-store.test.js', 'route.test.js', 'mods.test.js']) {
     const r = spawnSync(process.execPath, [join(here, f)], { encoding: 'utf8' });
     const out = (r.stdout + r.stderr).trim();
     console.log(`  ${f.padEnd(22)} ${out.split(/\r?\n/).slice(-1)[0]}`);

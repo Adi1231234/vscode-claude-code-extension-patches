@@ -30,9 +30,9 @@
     }
 
     function pending(taskId) {
-        if (!window.__ccAgentStore) return false;
+        if (!window.__ccOutbox) return false;
         var have = seenBy(taskId);
-        return window.__ccAgentStore.sentHere(taskId).some(function (t) { return !have.has(t); });
+        return window.__ccOutbox.sentHere(taskId).some(function (t) { return !have.has(t); });
     }
 
     /* How many rows the agent has streamed into the conversation's store. */

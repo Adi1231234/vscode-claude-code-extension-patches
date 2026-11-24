@@ -16,7 +16,7 @@
    view is given draws each as a copy that is plainly the person's: not
    synthetic, no origin, outside the app's own "sender not recorded" set (a
    WeakSet of the row objects), holding just what was typed
-   (lib/js/ccAgentStore.js sentTo). A fetched row has lost its origin by then,
+   (lib/js/ccOutbox.js sentTo). A fetched row has lost its origin by then,
    so its id is noted; a row the store streams keeps it. */
 (function (A) {
     var PLUGIN = "agent-input";
@@ -28,9 +28,9 @@
 
     /* What the person typed, out of what the agent was handed. */
     function ownText(text, taskId) {
-        if (typeof text !== "string" || !window.__ccAgentStore) return text;
+        if (typeof text !== "string" || !window.__ccOutbox) return text;
         var best = "";
-        window.__ccAgentStore.sentTo(taskId).forEach(function (t) {
+        window.__ccOutbox.sentTo(taskId).forEach(function (t) {
             if (t.length > best.length && text.indexOf(t) >= 0) best = t;
         });
         return best || text;

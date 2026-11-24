@@ -31,8 +31,10 @@ view, or Escape in the box, gives the box back to the main conversation.
    (`webview/route.js`). With the main conversation on screen that is the
    session itself, unchanged. With an agent on screen
    (`lib/js/ccTarget.js`) it is the agent's store (`lib/js/ccAgentStore.js`),
-   which asks the host `{ type: "cc_agent_send", taskId, agentId, text }` on
-   the chat's own request channel.
+   whose outbox (`lib/js/ccOutbox.js`) asks the host
+   `{ type: "cc_agent_send", taskId, agentId, text }` on the chat's own request
+   channel. A refusal is shown under that agent's transcript, and a queue lane
+   it refused holds instead of trying again.
 2. **The host** (`host/deliver.js`, answered ahead of the app's own
    `stop_subagent`) hands it to the conversation's CLI through the SDK query
    every panel request goes through:
@@ -78,6 +80,11 @@ view, or Escape in the box, gives the box back to the main conversation.
   coordinator), not as the person's: that is how `$.session.send` frames a
   plugin's message. `send_task_message`, once the CLI fills it in, may carry it
   as the person's own.
+- **An agent someone stopped cannot be woken from here.** SendMessage refuses
+  it, in words meant for a model that vary ("was not resumed", "won't be
+  resumed"); the terminal can, from what the person types. The agent's store
+  knows it was stopped and says so in its own words, and the main conversation
+  can run the agent again.
 - A conversation whose CLI started before the patch has no mod: the reason
   says to restart it.
 

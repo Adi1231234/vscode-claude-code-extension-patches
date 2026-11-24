@@ -72,7 +72,9 @@
             K: K,
             session: s,
             paneRef: A.useTargetRef(K, a),
-            foot: A.talksToAgents() ? h(A.ToAgent, { K: K, running: live }, "to") : null,
+            /* Keyed by agent: moving to another agent's view mounts a fresh
+               line, with that agent's note - not the one it showed before. */
+            foot: A.talksToAgents() ? h(A.ToAgent, { K: K, running: live, agentId: a.agentId || a.taskId }, "to:" + a.taskId) : null,
             aria: "Agent: " + a.description,
             followKey: "agent:" + a.taskId,
             onBack: p.onBack,
@@ -90,6 +92,8 @@
         return h(Frame, {
             K: K,
             session: s,
+            /* A task takes no messages; say where the box under it sends. */
+            foot: A.talksToAgents() ? h("div", { className: "cc-at-to", children: "The message box below talks to the main conversation." }, "to") : null,
             aria: "Background task: " + K.taskLabel(t),
             followKey: "task:" + t.taskId,
             onBack: p.onBack,

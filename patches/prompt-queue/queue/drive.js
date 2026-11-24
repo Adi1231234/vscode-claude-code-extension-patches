@@ -77,7 +77,17 @@
      30 s, and any send that works resets the pause. */
   var retryMs = 0, retryAt = 0;
 
-  function sendFailed() {
+  /* A store that knows a send will not go by trying again marks its refusal
+     with parks - an agent's (lib/js/ccAgentStore.js), whose CLI refused it
+     with a reason: measured, a stopped agent is refused every time, and the
+     lane retried it every 30 s for good. Then the queue holds for the person,
+     as after a stop, and the store has said why. */
+  function sendFailed(err) {
+    if (err && err.parks) {
+      paused = true;
+      ccLog("queue", "send refused, queue parked:", err.message);
+      return;
+    }
     retryMs = Math.min(retryMs ? retryMs * 2 : 1000, 30000);
     retryAt = Date.now() + retryMs;
     setTimeout(pass, retryMs + 10);

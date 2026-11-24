@@ -52,9 +52,11 @@ in place. Read this before changing anything so the structure stays clean.
     its list.
     And `ccTarget.js` (`__ccTarget`): who the message box talks to - the main
     conversation, or the agent whose view is open (agent-tree sets it,
-    agent-input and the queue's lanes read it); and `ccAgentStore.js`
-    (`__ccAgentStore`): one agent in the shape of a session store (busy, send,
-    interrupt, a stop row on its stop), so the queue runs a lane for it.
+    agent-input and the queue's lanes read it); `ccOutbox.js` (`__ccOutbox`):
+    messages to agents through the host, what was sent, and why one did not go;
+    and `ccAgentStore.js` (`__ccAgentStore`): one agent in the shape of a session
+    store (busy, send, interrupt, a stop row on its stop), so the queue runs a
+    lane for it.
     Host runtimes (prepended to `extension.js`, not the webview):
     `ccProjects.js` (where transcripts live), `ccTranscript.js`
     (`__ccTranscript`: a session's transcript found by id, and its records of

@@ -1,18 +1,18 @@
 /* agent-tree: the line under the agent's transcript, just above the message
    box: that the box talks to this agent, what the agent does with a message,
-   and why the last one did not go (lib/js/ccTarget.js note). Subscribed while
-   it is on screen. */
+   and why the last one to it did not go - from the box or from its queue
+   lane (lib/js/ccTarget.js noteFor). Subscribed while it is on screen. */
 (function (A) {
     A.ToAgent = function (p) {
-        var K = p.K, h = K.h;
-        var note = K.useState(window.__ccTarget.noteText());
+        var K = p.K, h = K.h, id = p.agentId;
+        var note = K.useState(window.__ccTarget.noteFor(id));
         var ref = K.useMemo(function () {
             var off = null;
             return function (el) {
                 if (off) { off(); off = null; }
-                if (el) off = window.__ccTarget.notes(function (t) { note[1](t); });
+                if (el) off = window.__ccTarget.notes(function () { note[1](window.__ccTarget.noteFor(id)); });
             };
-        }, []);
+        }, [id]);
         var how = p.running ? "It reads a message at its next step." : "A message wakes it up to carry on.";
         return h("div", {
             ref: ref,

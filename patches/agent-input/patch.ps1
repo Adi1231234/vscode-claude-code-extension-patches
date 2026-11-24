@@ -33,16 +33,9 @@ function Find-AgentInputSite {
 }
 
 function Get-AgentInputRuntime {
-    param($Ctx)
-    $parts = @((Get-LibJsPath 'ccStore.js'), (Get-LibJsPath 'ccTarget.js'), (Get-LibJsPath 'ccAgentStore.js'),
+    $parts = @((Get-LibJsPath 'ccStore.js'), (Get-LibJsPath 'ccTarget.js'), (Get-LibJsPath 'ccOutbox.js'), (Get-LibJsPath 'ccAgentStore.js'),
         (Join-Path $PSScriptRoot 'webview/route.js'))
-    $text = ($parts | ForEach-Object { (Read-Text $_).Trim() }) -join "`n"
-    $classes = Expand-CssClasses $Ctx $text
-    # Only the Escape guard reads app classes: without them it would also take
-    # an Escape meant for an open menu, so the guard is what goes.
-    foreach ($m in $classes.Missing) { Write-Miss "app class $m not found" }
-    if ($classes.Missing.Count) { return $null }
-    $classes.Text
+    ($parts | ForEach-Object { (Read-Text $_).Trim() }) -join "`n"
 }
 
 function Invoke-Patch {
@@ -64,8 +57,8 @@ function Invoke-Patch {
     if (-not $js) { Write-Miss 'CLI spawn extraArgs anchor not found exactly once'; return }
     $send = Find-AgentInputSite $wc $SendLit $SendRx 'the chat submit send'
     $case = Find-AgentInputSite $js 'case"stop_subagent":' $CaseRx 'the host request switch'
-    $runtime = Get-AgentInputRuntime $Ctx
-    if (-not $send -or -not $case -or -not $runtime) { return }
+    if (-not $send -or -not $case) { return }
+    $runtime = Get-AgentInputRuntime
 
     $call = (Get-InjectedJs (Join-Path $PSScriptRoot 'webview/send-call.js') @{ '__STORE__' = $send.Groups[1].Value }).Trim()
     $wc = Set-MatchText $wc $send ($call + $send.Groups['rest'].Value)

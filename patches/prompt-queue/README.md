@@ -44,6 +44,9 @@ panel, `lanes.js` makes them:
   a stop row whenever the agent is stopped - so it sends one item per run of
   the agent (waking it when it has finished), parks on its stop like the
   conversation's does, and holds while the panel is on another conversation.
+  A send the agent refuses (a stopped agent cannot be woken by a message) is
+  marked `parks` by its store: the lane holds for the person instead of
+  trying again every 30 s, and the reason shows under the agent's transcript.
   It is saved under `ccq:<conversation id>~agent~<task id>`, restored held, has
   its own log ring, and publishes nothing. An agent takes text only, so a draft
   with attachments is not queued there.
@@ -138,8 +141,11 @@ of rows there were, by uuid or by the row itself when it has none, not a
 position (the store trims its list past 600 rows, and a position then points
 into the run's own rows); the first value after a switch
 of conversation is no edge, so a mark from the old conversation is never read
-against the new one; and Play pressed while the stopped run winds down re-marks,
-so only a stop after the Play can park again.
+against the new one - but when that value is a run already under way, the run is
+marked there, from the new store, so a stop still to come parks (an agent's lane
+is made when its view opens, usually mid-run, and without this its agent's Stop
+left the lane free to wake it again); and Play pressed while the stopped run
+winds down re-marks, so only a stop after the Play can park again.
 
 Note this is the same `paused` as the play/pause button, and it now holds
 **everything**, scheduled messages included (see `firstSendableIndex`). A due

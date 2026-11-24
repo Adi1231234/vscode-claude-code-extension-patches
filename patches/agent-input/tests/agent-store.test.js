@@ -16,8 +16,8 @@ const lib = (n) => fs.readFileSync(path.join(__dirname, '..', '..', '..', 'lib',
 const ctx = { console, setTimeout, clearTimeout, Promise, Map, WeakMap, Set, Date };
 ctx.window = ctx;
 ctx.globalThis = ctx;
-vm.runInNewContext(lib('ccAgentStore.js') + '\n' + lib('ccReply.js'), ctx);
-const A = ctx.__ccAgentStore, R = ctx.__ccReply;
+vm.runInNewContext([lib('ccTarget.js'), lib('ccOutbox.js'), lib('ccAgentStore.js'), lib('ccReply.js')].join('\n'), ctx);
+const A = ctx.__ccAgentStore, R = ctx.__ccReply, T = ctx.__ccTarget;
 
 /* The app's agentMapAgents: a signal of a Map keyed by task id. */
 function sig(v) {
@@ -70,15 +70,28 @@ const agent = { taskId: 't1', agentId: 'a1', name: 'probe' };
   await a.send('x', [{ name: 'f.png' }]).catch((e) => { threw = e.message; });
   ok(/text only/.test(threw) && s.sent.length === 1, 'files are refused before the host is asked');
 
-  s = appStore('finished', () => ({ type: 'cc_agent_send_response', error: 'Agent could not be resumed' })); a = A.of(s, agent);
-  threw = '';
-  await a.send('x').catch((e) => { threw = e.message; });
-  ok(threw === 'Agent could not be resumed' && a.busy.value === false, 'the host\'s reason comes back, and a refused send wakes nothing');
+  let answer = { type: 'cc_agent_send_response', error: 'Agent could not be resumed' };
+  s = appStore('finished', () => answer); a = A.of(s, agent);
+  let err = null;
+  await a.send('x').catch((e) => { err = e; });
+  ok(err && err.message === 'Agent could not be resumed' && a.busy.value === false, 'the host\'s reason comes back, and a refused send wakes nothing');
+  ok(err && err.parks === true, 'marked parks: trying again will not make it go');
+  ok(T.noteFor('a1') === 'Not sent: Agent could not be resumed' && T.noteFor('b2') === '', 'noted for that agent alone');
+  answer = { type: 'cc_agent_send_response', via: 'mod' };
+  await a.send('y');
+  ok(T.noteFor('a1') === '', 'a send that goes clears the note');
+
+  s = appStore('stopped', () => ({ type: 'cc_agent_send_response', error: 'Agent x was stopped and won\'t be resumed. Treat its work as cancelled.' })); a = A.of(s, agent);
+  err = null;
+  await a.send('x').catch((e) => { err = e; });
+  ok(err && /^this agent was stopped, and a stopped agent cannot be woken from here/.test(err.message) && err.parks === true,
+    'a stopped agent\'s refusal is said in the store\'s words, whatever the CLI\'s: ' + (err && err.message));
+  ok(/^Not sent: this agent was stopped/.test(T.noteFor('a1')), 'and that is the note');
 
   s = appStore('finished'); s.claudeChannelId = undefined; a = A.of(s, agent);
-  threw = '';
-  await a.send('x').catch((e) => { threw = e.message; });
-  ok(/not running/.test(threw), 'no channel, no send');
+  err = null;
+  await a.send('x').catch((e) => { err = e; });
+  ok(err && /not running/.test(err.message) && err.parks === true, 'no channel, no send, held');
 
   s = appStore('working'); a = A.of(s, agent);
   await a.interrupt();
