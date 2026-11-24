@@ -47,6 +47,20 @@ this conversation's agents, each with its background tasks under it.
   stays mounted under the view, so it keeps running, keeps its scroll position
   and its draft, and is there unchanged after **Back to main conversation**, a
   click on the root row, or Escape. A running agent has **Stop agent**.
+- **The agent's view looks like the main conversation.** It wears the app's
+  own conversation-list classes (`messagesContainer`, `stickyMode`, and
+  `fullEditor` exactly when the app uses it), filled in from the bundle's
+  CSS-module map (`runtime/app-classes.js`). So it gets the same background
+  (which `panel-background` evens out), the same 20px gutters, scrolling and
+  sticky prompts, and the rtl patch's direction for the messages. Before, the
+  app's transcript view sat as a lighter box on the side bar's colour, with its
+  dialog's rule and gap on top. The header stays chrome: left to right, like
+  the app's own header.
+- **It opens at the newest row and follows the agent** (`runtime/follow.js`),
+  with the rule the app pins its own list by: within 50px of the end it
+  follows, scrolled up it lets go, back at the end it follows again. It reacts
+  to the content growing (a ResizeObserver), not to a timer, and opening
+  another agent starts at the end again.
 - **Picking a background task** shows its live output (the app's own view, for
   shell tasks) with **Stop**.
 
