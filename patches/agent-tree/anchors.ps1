@@ -24,11 +24,14 @@ $script:AgentTreeAnchors = [ordered]@{
     mainRow = @{ Literal = '{kind:"main"}'; Before = 120; After = 20
         Pattern = "children:\[$C\($N,\{session:$N,onClick:\(\)=>$N\(\{kind:`"main`"\}\)" }
     # An agent row: its status, the status dot, the list-item and map modules.
-    agentRow = @{ Literal = '.rowTitle,children:['; Before = 260; After = 80
-        Pattern = "let $C=$C\($C,$N\);return $N\(`"button`",\{type:`"button`",className:``\$\{$C\.serverItem\} \$\{$N\.row\}``,onClick:$N,title:\3\.description,(?:`"data-agent-status`":$N,)?children:\[$N\(`"span`",\{className:$N\.rowTitle,children:\[$N\($C,\{state:$C\(\1\)\}\)" }
-    # The app's "Open transcript" view.
-    transcript = @{ Literal = ',renderRow:'; Before = 80; After = 40
-        Pattern = "$N\($C,\{session:$N,agent:$N,running:$N,renderRow:$N\},$N\.taskId\)" }
+    # 2.1.294 had a data attribute on the button; 2.1.331 spreads one onto the
+    # title - both optional.
+    agentRow = @{ Literal = '.serverItem} ${'; Before = 80; After = 300
+        Pattern = "let $C=$C\($C,$N\);return $N\(`"button`",\{type:`"button`",className:``\$\{$C\.serverItem\} \$\{$N\.row\}``,onClick:$N,title:\3\.description,(?:`"data-agent-status`":$N,)?children:\[$N\(`"span`",\{className:$N\.rowTitle,(?:\.\.\.$N\($N\),)?children:\[$N\($C,\{state:$C\(\1\)\}\)" }
+    # The app's "Open transcript" view. 2.1.331 spreads an optional `waiting`
+    # prop in before renderRow (empty at the app's own call site).
+    transcript = @{ Literal = ',renderRow:'; Before = 100; After = 40
+        Pattern = "$N\($C,\{session:$N,agent:$N,running:$N,(?:\.\.\.[^,{}]{1,40},)?renderRow:$N\},$N\.taskId\)" }
     # An agent's elapsed time and tokens.
     agentMeta = @{ Literal = '.rowMeta,children:'; Before = 30; After = 40
         Pattern = "className:$N\.rowMeta,children:$N\($C,\{agent:$N\}\)" }
@@ -42,7 +45,8 @@ $script:AgentTreeAnchors = [ordered]@{
     # for the main conversation, undefined for a call it cannot find either.
     owner = @{ Literal = '.sdkParentToolUseId!==void 0?'; Before = 220; After = 10
         Pattern = "function $C\($N,$N\)\{[^}]{0,200}?return $N\.sdkParentToolUseId!==void 0\?" }
-    # The status labels (Working, Finished, ...).
-    labels = @{ Literal = '.subagentType,'; Before = 40; After = 10
-        Pattern = "children:\[$C\[$N\],$N\.subagentType," }
+    # The status labels (Working, Finished, ...), found by their own text: the
+    # line that used them moved in 2.1.331, the table did not.
+    labels = @{ Literal = '={working:"Working",waiting:'; Before = 40; After = 10
+        Pattern = "$C=\{working:`"Working`",waiting:" }
 }
