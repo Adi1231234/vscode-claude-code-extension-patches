@@ -49,6 +49,7 @@
             K: K,
             session: s,
             waiting: waiting,
+            taskCount: tasks.size,
             open: !!p.ccOpen,
             setOpen: p.ccSetOpen,
             sel: picked ? selState[0] : null,
@@ -67,7 +68,7 @@
            background task; ended agents stay in the store, so once it
            appears it stays. `/agents` still opens it on purpose. */
         if (agents.size === 0 && tasks.size === 0 && !ctx.open && !view) return null;
-        var side = K.h(A.Sidebar, { ctx: ctx, model: model, running: A.activeCount(K, model, waiting) }, "side");
+        var side = K.h(A.Sidebar, { ctx: ctx, model: model }, "side");
         return [
             side,
             view ? K.h("div", { className: ctx.open ? "cc-at-over cc-at-over-open" : "cc-at-over", children: view }, "over") : null

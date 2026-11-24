@@ -60,7 +60,7 @@ function Invoke-Patch {
         $out = $out.Substring(0, $e.At) + $e.Text + $out.Substring($e.At + $e.Len)
     }
 
-    $runtime = (@('model.js', 'glyphs.js', 'rows.js', 'sidebar.js', 'pane.js', 'root.js') |
+    $runtime = (@('model.js', 'status.js', 'glyphs.js', 'rows.js', 'rail.js', 'sidebar.js', 'pane.js', 'root.js') |
         ForEach-Object { Read-Text (Join-Path $PSScriptRoot "runtime/$_") }) -join "`n"
     Write-Text $Ctx.WebJs ("/* AGENTTREE */`n" + $runtime + "`n" + $out)
     Write-Ok 'agent tree sidebar in place of the Agent map dialog'

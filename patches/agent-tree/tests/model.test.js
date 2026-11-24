@@ -59,7 +59,7 @@ assert.strictEqual(m.roots.length, 1, 'the nested agent is not a root');
 assert.deepStrictEqual(ids(m.roots[0].tasks), ['t2'], 'a task started by agent A sits under A');
 assert.deepStrictEqual(ids(m.roots[0].children[0].tasks), ['t3'], 'a task started by the nested agent sits under it');
 assert.deepStrictEqual(ids(m.unknown), ['t4', 't5', 't6'], 'no call, a trimmed call or an unknown agent is never guessed');
-assert.strictEqual(A.activeCount(K, m, new Set()), 1 + 6, 'one working agent plus six live tasks');
+assert.deepStrictEqual(A.flatten(m.roots).map((a) => a.taskId), ['a1', 'a2'], 'the rail lists each agent followed by those it spawned');
 assert.strictEqual(A.keyOf({ taskId: 'x' }), 'x', 'an agent without a call id is keyed by its task id');
 
 // A main call tagged undefined rather than null still counts as main.

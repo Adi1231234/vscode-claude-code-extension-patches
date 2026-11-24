@@ -64,17 +64,14 @@
         return out;
     };
 
-    function countNodes(nodes, waiting, K) {
-        var n = 0;
+    /* Every agent in tree order (each one followed by those it spawned): the
+       rail's icons, top to bottom. */
+    A.flatten = function (nodes, out) {
+        out = out || [];
         nodes.forEach(function (node) {
-            if (A.isActive(K.status(node.agent, waiting))) n++;
-            n += node.tasks.length + countNodes(node.children, waiting, K);
+            out.push(node.agent);
+            A.flatten(node.children, out);
         });
-        return n;
-    }
-
-    /* How many agents and tasks are running now: the rail's badge. */
-    A.activeCount = function (K, model, waiting) {
-        return countNodes(model.roots, waiting, K) + model.main.length + model.unknown.length;
+        return out;
     };
 })(window.__ccAT = window.__ccAT || {});

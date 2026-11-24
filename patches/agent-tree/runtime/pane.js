@@ -58,7 +58,7 @@
                 h("header", {
                     className: "cc-at-panehead",
                     children: [
-                        h("button", { type: "button", className: "cc-at-back", onClick: p.onBack, children: "Back to main conversation" }, "b"),
+                        h("button", { type: "button", className: "cc-at-back", onClick: p.onBack, children: [A.chevron(h), "Main conversation"] }, "b"),
                         h("div", { className: "cc-at-panetitle", children: [h(K.dot, { state: p.dot }, "d"), h("span", { children: p.title }, "t")] }, "t"),
                         h("div", { className: "cc-at-panemeta", children: p.meta }, "m"),
                         p.stop,

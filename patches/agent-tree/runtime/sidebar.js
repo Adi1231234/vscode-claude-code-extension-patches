@@ -1,13 +1,12 @@
-/* agent-tree: the sidebar. Collapsed it is a rail with one button and a count
-   of what is running; open it is the tree: the main conversation at the root,
-   its agents (nested as they spawned each other) and every agent's background
-   tasks under it. */
+/* agent-tree: the sidebar. Collapsed it is the rail (rail.js): an icon for the
+   main conversation and one per agent. Open it is the tree: the main
+   conversation at the root, its agents (nested as they spawned each other) and
+   every agent's background tasks under it. */
 (function (A) {
     function MainNode(p) {
-        var ctx = p.ctx, K = ctx.K, h = K.h, s = ctx.session;
+        var ctx = p.ctx, K = ctx.K, h = K.h;
         K.track();
-        var asks = s.permissionRequests.value.some(function (r) { return !r.agentId; });
-        var busy = s.visiblyBusy.value;
+        var st = A.mainStatus(ctx);
         var kids = p.model.roots.map(function (n) {
             return h(A.AgentNode, { ctx: ctx, node: n, depth: 1 }, n.agent.taskId);
         }).concat(p.model.main.map(function (t) {
@@ -19,13 +18,14 @@
             depth: 0,
             open: !ctx.collapsed.has("main"),
             hasKids: kids.length > 0,
-            active: busy || asks,
-            selected: !ctx.sel,
-            dot: asks ? "waiting" : busy ? "running" : "idle",
-            label: s.summary.value || "This session",
-            meta: asks ? "Main conversation · waiting for you" : busy ? "Main conversation · working" : "Main conversation",
+            active: st.active,
+            selected: st.selected,
+            dot: st.dot,
+            glyph: A.chatIcon(h),
+            label: st.label,
+            meta: st.meta,
             title: "Back to the main conversation",
-            onSelect: function () { ctx.select(null); },
+            onSelect: st.select,
             children: kids
         });
     }
@@ -44,17 +44,18 @@
         });
     }
 
-    function Rail(p) {
-        var h = p.ctx.K.h, n = p.running;
-        return h("button", {
-            type: "button",
-            className: "cc-at-railbtn",
-            "aria-label": "Show the agent tree",
-            title: n > 0 ? "Show the agent tree: " + n + " running" : "Show the agent tree",
-            onClick: function () { p.ctx.setOpen(true); },
+    /* "Agents" and, while anything runs, how many agents and tasks do. */
+    function Title(p) {
+        var ctx = p.ctx, K = ctx.K, h = K.h;
+        K.track();
+        var running = A.flatten(p.model.roots).filter(function (a) {
+            return A.isActive(K.status(a, ctx.waiting));
+        }).length + ctx.taskCount;
+        return h("span", {
+            className: "cc-at-title",
             children: [
-                A.treeIcon(h),
-                n > 0 ? h("span", { className: "cc-at-badge", children: n }, "n") : null
+                "Agents",
+                running > 0 ? h("span", { className: "cc-at-count", children: running + " running" }, "n") : null
             ]
         });
     }
@@ -62,7 +63,12 @@
     A.Sidebar = function (p) {
         var ctx = p.ctx, h = ctx.K.h;
         if (!ctx.open) {
-            return h("aside", { className: "cc-at cc-at-rail", "data-cc": "", children: h(Rail, p) });
+            return h("aside", {
+                className: "cc-at cc-at-rail",
+                "data-cc": "",
+                "aria-label": "Agents",
+                children: h(A.Rail, p)
+            });
         }
         return h("aside", {
             className: "cc-at cc-at-open",
@@ -72,7 +78,7 @@
                 h("div", {
                     className: "cc-at-top",
                     children: [
-                        h("span", { className: "cc-at-title", children: "Agents" }, "t"),
+                        h(Title, p, "t"),
                         h("button", {
                             type: "button",
                             className: "cc-at-close",

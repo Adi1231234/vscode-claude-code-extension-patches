@@ -1,7 +1,7 @@
-/* agent-tree: one row of the tree, and the three kinds that use it.
-   A row is a disclosure button (when it has anything under it), the app's own
-   status dot, a label and a meta line. Running rows keep full colour and a
-   pulsing dot; ended ones are dimmed, so the two read apart at a glance. */
+/* agent-tree: one row of the tree, and the kinds that use it.
+   A row is a disclosure button (when it has anything under it), a status
+   lead, a label and a meta line. Running rows keep full colour and a pulsing
+   dot; ended ones are dimmed, so the two read apart at a glance. */
 (function (A) {
     function Twist(p) {
         var h = p.ctx.K.h;
@@ -16,10 +16,23 @@
         });
     }
 
-    /* The generic row. p: ctx, id, depth, open, hasKids, active, selected,
-       dot, label, meta, title, onSelect, children (the rows under it). */
-    A.Row = function (p) {
+    /* What leads a row: the app's status dot, or for the main conversation
+       and a background task a glyph that says what kind of row it is (its
+       colour still says whether it runs). */
+    function Lead(p) {
         var K = p.ctx.K, h = K.h;
+        if (p.glyph) return h("span", { className: "cc-at-lead cc-at-lead-" + p.dot, children: p.glyph });
+        return h("span", {
+            className: "cc-at-lead",
+            children: h(K.dot, { state: p.dot, className: p.active ? "cc-at-pulse" : "" })
+        });
+    }
+
+    /* The generic row. p: ctx, id, depth, open, hasKids, active, selected,
+       dot, glyph (optional), label, meta, title, onSelect, children (the rows
+       under it, drawn in a group whose edge is the tree's indent guide). */
+    A.Row = function (p) {
+        var h = p.ctx.K.h;
         var cls = "cc-at-row" + (p.active ? " cc-at-live" : " cc-at-done") +
             (p.selected ? " cc-at-selected" : "");
         return h("div", {
@@ -31,7 +44,6 @@
             children: [
                 h("div", {
                     className: cls,
-                    style: { "--cc-at-depth": p.depth },
                     children: [
                         h(Twist, p, "twist"),
                         h("button", {
@@ -40,14 +52,14 @@
                             title: p.title,
                             onClick: p.onSelect,
                             children: [
-                                h(K.dot, { state: p.dot, className: p.active ? "cc-at-pulse" : "" }),
-                                h("span", { className: "cc-at-label", children: p.label }),
-                                h("span", { className: "cc-at-meta", children: p.meta })
+                                h(Lead, p, "lead"),
+                                h("span", { className: "cc-at-label", children: p.label }, "l"),
+                                h("span", { className: "cc-at-meta", children: p.meta }, "m")
                             ]
                         }, "pick")
                     ]
                 }, "row"),
-                p.open && p.hasKids ? h("div", { role: "group", children: p.children }, "kids") : null
+                p.open && p.hasKids ? h("div", { role: "group", className: "cc-at-group", children: p.children }, "kids") : null
             ]
         });
     };
@@ -62,6 +74,7 @@
             active: true,
             selected: !!sel && sel.kind === "task" && sel.id === t.taskId,
             dot: "running",
+            glyph: A.terminalIcon(h),
             label: K.taskLabel(t),
             meta: h(K.taskTime, { task: t }),
             title: "Background task: " + K.taskLabel(t),
@@ -71,7 +84,7 @@
 
     A.AgentNode = function (p) {
         var ctx = p.ctx, K = ctx.K, h = K.h, node = p.node, a = node.agent;
-        var key = A.keyOf(a), st = K.status(a, ctx.waiting);
+        var st = A.agentStatus(ctx, a), key = st.key;
         var open = !ctx.collapsed.has(key);
         var kids = node.children.map(function (c) {
             return h(A.AgentNode, { ctx: ctx, node: c, depth: p.depth + 1 }, c.agent.taskId);
@@ -84,16 +97,16 @@
             depth: p.depth,
             open: open,
             hasKids: kids.length > 0,
-            active: A.isActive(st),
-            selected: !!ctx.sel && ctx.sel.kind === "agent" && ctx.sel.key === key,
-            dot: K.dotState(st),
-            label: a.description,
+            active: st.active,
+            selected: st.selected,
+            dot: st.dot,
+            label: st.label,
             meta: [
-                h("span", { children: K.labels[st] }, "s"),
+                h("span", { className: "cc-at-st cc-at-st-" + st.status, children: K.labels[st.status] }, "s"),
                 h("span", { className: "cc-at-time", children: h(K.agentTime, { agent: a }) }, "t")
             ],
-            title: K.labels[st] + ": " + a.description,
-            onSelect: function () { ctx.select({ kind: "agent", key: key }); },
+            title: st.title,
+            onSelect: st.select,
             children: kids
         });
     };
