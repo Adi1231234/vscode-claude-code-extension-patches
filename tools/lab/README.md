@@ -268,6 +268,14 @@ extension" rather than like what it is.
   it is never loaded: no line in `exthost.log`, no `Claude Code:` entries in the
   palette, no panel, no reason given. `<lab>/portable/user-data/User/settings.json` turns trust
   off.
+- **Claude Code's own folder trust, too** (`folder-trust.mjs`). The extension
+  asks `claude workspace-trust --json` in the folder and starts the CLI in
+  `untrusted-start` when it says no: every prompt then stays busy with no reply
+  (2.1.327 to 2.1.331). The CLI keys trust by the folder's git root, and a
+  folder with no repo of its own takes the nearest `.git` above it - on a
+  machine with a stray `C:\.git` that root was `C:\`, so the entry written for
+  the folder was never read. The lab's folder is its own repo now, and the
+  lab's `.claude.json` trusts it.
 - **The CDP port comes from `argv.json`, in the home directory.**
   `--remote-debugging-port` on the command line is ignored, and the file the
   editor reads is the same one your real install uses. The lab gets a home of

@@ -2,8 +2,7 @@
  *
  *     node patches/phone-queue/tests/server.test.js
  *
- * Loaded the way patch.ps1 writes it (the __MODDIR__ placeholder filled) into a
- * fresh context with the host's require; the panels are fakes that record what
+ * Loaded the way patch.ps1 writes it into a fresh context with the host's require; the panels are fakes that record what
  * they are posted and answer through handle(), as webview/link.js does. Real
  * HTTP on 127.0.0.1, so the key in the path and the 404 are tested for real.
  *
@@ -19,7 +18,6 @@ const ok = (c, m) => { c ? pass++ : (fail++, console.log('  FAIL: ' + m)); };
 const extDir = fs.mkdtempSync(path.join(os.tmpdir(), 'ccphone-'));
 const host = (name) => fs.readFileSync(path.join(__dirname, '..', 'host', name), 'utf8');
 const src = [host('listen.js'), host('panels.js'), host('server.js')].join(String.fromCharCode(10))
-  .replace('__MODDIR__', 'patches-mods/phone-queue')
   .replace('var REPLY_MS = 5000;', 'var REPLY_MS = 300;');
 const ctx = { require, __dirname: extDir, setTimeout, clearTimeout, console, WeakRef, Promise };
 ctx.globalThis = ctx;
@@ -57,9 +55,6 @@ function panel(name, answer, from) {
   const url = phone.env().CC_PHONE_QUEUE_URL;
   ok(/^http:\/\/127\.0\.0\.1:\d+\/[0-9a-f]{36}$/.test(url), 'listens on 127.0.0.1, keyed by a random path');
 
-  ok(JSON.stringify(phone.args()) === '{}', 'no --plugin-dir while the mod folder is missing');
-  fs.mkdirSync(path.join(extDir, 'patches-mods', 'phone-queue'), { recursive: true });
-  ok(phone.args()['plugin-dir'] === path.join(extDir, 'patches-mods', 'phone-queue'), '--plugin-dir once it is there');
 
   const wrong = await post(url.replace(/[0-9a-f]{36}$/, 'f'.repeat(36)), { sid: 's', cmd: { op: 'list' } });
   ok(wrong.status === 404, 'the wrong key is a 404');

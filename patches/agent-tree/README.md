@@ -56,9 +56,30 @@ this conversation's agents, each with its background tasks under it.
   the elapsed time and tokens.
 - **Picking an agent shows its transcript** - the app's own "Open transcript"
   view - in place of the conversation. The conversation is not replaced: it
-  stays mounted under the view, so it keeps running, keeps its scroll position
-  and its draft, and is there unchanged after **Back to main conversation**, a
-  click on the root row, or Escape. A running agent has **Stop agent**.
+  stays mounted under the view, so it keeps running, keeps its scroll position,
+  and is there unchanged after **Back to main conversation**, a click on the
+  root row, or Escape. A running agent has **Stop agent**.
+- **The message box stays under the agent's view, and talks to that agent**
+  (`patches/agent-input`). The view ends at the top of the box
+  (`runtime/inset.js`: a ResizeObserver keeps its bottom on the box's top as
+  the box grows - a permission card, a long draft, the queue panel), so the
+  permission cards drawn in the box's place are answered right there. A line
+  under the transcript says the box talks to this agent, what it does with a
+  message (read at its next step, or woken by it), and why the last one did
+  not go (`runtime/to-agent.js`). `runtime/target.js` tells the box which
+  agent is on screen (`lib/js/ccTarget.js`).
+- **What you sent an agent is drawn in its transcript as your message.** The
+  app's transcript view has no way to show it: a message reaches the agent as
+  a meta row from "the coordinator", which the view leaves out (or, un-marked,
+  draws as "Sender not recorded"), and it is never in the store's live rows.
+  So the view fetches through a session whose transcript un-marks those rows,
+  and the row renderer draws them as the person's, holding just what was typed
+  - the CLI wraps a message that wakes an agent in words of its own
+  (`runtime/typed-rows.js`). While a message is not in the view yet, the view
+  fetches again on each state of the agent and each row it streams, 300 ms
+  after it: the CLI writes the transcript every 100 ms, and a fetch made at the
+  event itself read the file without the message
+  (`runtime/transcript-session.js`).
 - **The agent's view looks like the main conversation.** It wears the app's
   own conversation-list classes (`messagesContainer`, `stickyMode`, and
   `fullEditor` exactly when the app uses it), filled in from the bundle's
@@ -103,8 +124,10 @@ Three edits to `webview/index.js`, all resolved before anything is written
    and the call-owner lookup. Every one of those names is captured, never
    written down.
 
-The picked agent's view is laid over the chat (`position: absolute` in
-`sessionLayout`) rather than swapped for it, which is what keeps the chat alive.
+The picked agent's view is laid over the chat's transcript (`position: absolute`
+in `sessionLayout`, down to the message box) rather than swapped for it, which is
+what keeps the chat alive. It sits under the box's layer, so the menus the box
+opens upwards (/ and @) still draw over it.
 Below 500px the app stacks its row into a column, and so does this: the rail is
 a strip along the top and a picked agent takes the whole view.
 

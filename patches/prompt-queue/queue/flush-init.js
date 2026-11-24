@@ -37,7 +37,7 @@
       sendWorked();
     } catch (err) {
       Q.splice(idx, 0, it);
-      sendFailed();
+      sendFailed(err);
       render();
     } finally {
       flushing = false;
@@ -64,7 +64,7 @@
       sendWorked();
     } catch (err) {
       Q.splice(Math.min(idx, Q.length), 0, it);
-      sendFailed();
+      sendFailed(err);
       render();
     } finally {
       flushing = false;

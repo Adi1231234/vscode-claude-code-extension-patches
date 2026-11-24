@@ -39,7 +39,8 @@ prompt queue (`patches/prompt-queue`). Sent alone it opens a menu of buttons;
    `/queue` from the parent window. `host/panels.js` keeps the token per
    webview, held weakly, and takes an answer only from the webview it asked; a
    closed panel is noticed because VS Code's `postMessage` resolves `false` on a
-   disposed webview rather than throwing. `host/args.js` adds `--plugin-dir`.
+   disposed webview rather than throwing. The mod is loaded from the shared
+   mods folder, which `lib/Mods.ps1` hands to the CLI as its `--plugin-dir`.
 3. **The panel** (`webview/link.js`) runs it through `window.__qRemote`
    (`prompt-queue/queue/remote-api.js`), which calls the same functions the
    panel's own buttons do, and answers with the queue as it now stands.

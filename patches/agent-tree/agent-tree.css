@@ -75,9 +75,11 @@
 @keyframes cc-at-pulse { 50% { opacity: .35; } }
 @media (prefers-reduced-motion: reduce) { .cc-at-pulse { animation: none; } }
 
-/* Above the chat's composer (z-index 20), which would otherwise sit over the
-   transcript and take keys meant for the main conversation. */
-.cc-at-over { position: absolute; z-index: 21; inset-block: 0; inset-inline-end: 0; inset-inline-start: 32px; display: flex; background: var(--app-primary-background); }
+/* Over the chat's transcript, down to the top of the message box
+   (runtime/inset.js sets --cc-at-input), so the box stays in reach: it talks
+   to the agent on screen. Under the box's own layer (z-index 20), so the
+   menus it opens upwards (/ and @) still draw over the view. */
+.cc-at-over { position: absolute; z-index: 19; inset-block: 0 var(--cc-at-input, 0px); inset-inline-end: 0; inset-inline-start: 32px; display: flex; background: var(--app-primary-background); }
 .cc-at-over-open { inset-inline-start: min(280px, 45%); }
 /* The view wears the app's own conversation-list classes (runtime/
    app-classes.js): the section for the list's surface, the body for all of it -
@@ -107,9 +109,12 @@
 .cc-at-acts { display: flex; align-items: center; gap: 8px; margin-block-start: 4px; }
 .cc-at-acts > button { width: auto; padding: 4px 12px; }
 .cc-at-fail { color: var(--app-error-foreground); font-size: 11.7px; }
-.cc-at-asks { display: flex; align-items: center; gap: 8px; margin-block-start: 4px; padding: 4px 8px; border: 1px solid var(--app-widget-border); border-radius: var(--corner-radius-small); }
-.cc-at-asks > button { margin-inline-start: auto; padding: 2px 8px; font: inherit; color: inherit; background: var(--app-list-hover-background); border: none; border-radius: var(--corner-radius-small); cursor: pointer; }
 .cc-at-note { padding: 12px 0; color: var(--app-secondary-foreground); }
+/* Between the agent's transcript and the message box: where what is typed
+   goes, and why the last one did not. Chrome like the header, so left to
+   right; the header's 20px gutter, the meta line's type. */
+.cc-at-to { flex: 0 0 auto; display: flex; flex-direction: column; gap: 2px; padding: 8px 20px; border-block-start: 1px solid var(--app-widget-border); color: var(--app-secondary-foreground); font-size: 11.7px; direction: ltr; text-align: start; }
+.cc-at-tofail { color: var(--app-error-foreground); overflow-wrap: anywhere; }
 
 /* Below 500px the app stacks its row into a column; the rail becomes a strip
    along the top (its marker on the bottom edge) and a picked conversation

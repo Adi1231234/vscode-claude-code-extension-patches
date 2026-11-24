@@ -58,6 +58,13 @@ q.busy(true, s, true);        /* the panel opened mid-run: the first value is no
 q.busy(false, s);
 ok(!q.paused(), 'a stop before the run was seen starting is not this run\'s');
 
+s = store([user('u1', 'go')]);
+q = queueWith(['next']);
+q.busy(true, s, true);        /* opened mid-run, as an agent's lane usually is */
+s.messages.value.push(user('u2', '[Request interrupted by user]'));
+q.busy(false, s);
+ok(q.paused(), 'a stop after the queue started watching a run under way parks it');
+
 s = store([]);
 q = queueWith([]);
 q.busy(true, s);

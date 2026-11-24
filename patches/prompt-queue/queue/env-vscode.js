@@ -8,14 +8,15 @@
   var BUSY = "Queue another message";   /* the composer's placeholder mid-turn */
   var PVH = "__PVHASH__";               /* the app's image-preview module hash */
 
-  /* This panel's composer, session store and session pushes, and where the
-     queue publishes its surfaces for other patches: one panel, one queue, so
-     the shared runtimes (lib/js/ccStore.js, ccSession.js) and window. The
-     desktop app runs a queue per conversation and answers these per queue. */
-  function composerEl() { return globalThis.__ccInput(); }
-  function sessionStore() { return globalThis.__ccStore(); }
-  function sessionPush() { return window.__ccSession; }
-  function expose(name, api) { window[name] = window[name] || api; return window[name]; }
+  /* This lane's composer, store and pushes, and where it publishes its
+     surfaces for other patches - all answered by its host (queue/lanes.js):
+     the conversation's lane has the panel's store and pushes and publishes on
+     window, an agent's has that agent's. Only the lane on screen has the
+     composer; the others send through their store. */
+  function composerEl() { return host.onScreen() ? globalThis.__ccInput() : null; }
+  function sessionStore() { return host.store(); }
+  function sessionPush() { return host.push(); }
+  function expose(name, api) { return host.publish(name, api); }
 
   /* The draft as plain text. */
   function composerText(e) {

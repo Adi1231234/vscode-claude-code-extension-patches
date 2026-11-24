@@ -68,7 +68,7 @@ Each feature / bug fix is a **self-contained folder** under `patches/`; the shar
 
 ## ✨ Features
 
-🌐 RTL text · ⌨️ Input RTL · 🔍 Zoom (Ctrl+Scroll) · 📥 Codex-style Prompt Queue · 📋 [Copy icon on your own messages](patches/copy-message) · 🔓 Bypass permission mode · 🗣️ [Subagent text on the stream](patches/subagent-stream-flags) · 🔄 [Restart one panel](patches/panel-restart-button) · 📊 [Usage left, inside the composer](patches/input-usage) · 🕒 [Message times under every row, tool calls too](patches/message-time) · 🌲 [Agent tree sidebar](patches/agent-tree).
+🌐 RTL text · ⌨️ Input RTL · 🔍 Zoom (Ctrl+Scroll) · 📥 Codex-style Prompt Queue · 📋 [Copy icon on your own messages](patches/copy-message) · 🔓 Bypass permission mode · 🗣️ [Subagent text on the stream](patches/subagent-stream-flags) · 🔄 [Restart one panel](patches/panel-restart-button) · 📊 [Usage left, inside the composer](patches/input-usage) · 🕒 [Message times under every row, tool calls too](patches/message-time) · 🌲 [Agent tree sidebar](patches/agent-tree) · 💬 [The message box talks to the agent on screen, queue included](patches/agent-input).
 
 🔄 **Restart Claude** — an icon in the panel header, next to Session history. It
 reloads **that one panel** and the CLI process behind it, then comes back on the

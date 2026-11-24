@@ -27,6 +27,33 @@ The add button is re-anchored on every pass (`ensureAddButton`) because the app
 re-renders its own footer; `insertBefore` on the existing node just moves it,
 so it never duplicates.
 
+## Lanes: the conversation's queue, and one per agent (`lanes.js`)
+
+The queue's fragments are the body of a factory, `__ccQueueEngine(host)`, and
+every call is a queue with its own state - the way the desktop app has always
+run one per conversation (`desktop/patches/prompt-queue/host/engines.js`). In the
+panel, `lanes.js` makes them:
+
+- **The conversation's lane** is the queue as it always was: the panel's store
+  and pushes, and it publishes `__qAuto` and `__qRemote` for the other patches. It keeps sending while an agent's view is on screen, through the
+  store, as a queue with no composer does.
+- **An agent's lane**, made when that agent's view first opens
+  (`patches/agent-tree`), while the message box talks to it
+  (`patches/agent-input`). It reads the agent's store (`lib/js/ccAgentStore.js`):
+  busy while the agent's run is not over, sent through the extension host, and
+  a stop row whenever the agent is stopped - so it sends one item per run of
+  the agent (waking it when it has finished), parks on its stop like the
+  conversation's does, and holds while the panel is on another conversation.
+  A send the agent refuses (a stopped agent cannot be woken by a message) is
+  marked `parks` by its store: the lane holds for the person instead of
+  trying again every 30 s, and the reason shows under the agent's transcript.
+  It is saved under `ccq:<conversation id>~agent~<task id>`, restored held, has
+  its own log ring, and publishes nothing. An agent takes text only, so a draft
+  with attachments is not queued there.
+- **Only the lane on screen draws** (`lib/js/ccTarget.js` says which). The one
+  leaving takes its panel and buttons down (`detach.js`); the one arriving
+  looks again.
+
 ## What runs the queue (`drive.js`)
 
 One **pass** does everything the queue needs from the outside world: pick up a
@@ -114,8 +141,11 @@ of rows there were, by uuid or by the row itself when it has none, not a
 position (the store trims its list past 600 rows, and a position then points
 into the run's own rows); the first value after a switch
 of conversation is no edge, so a mark from the old conversation is never read
-against the new one; and Play pressed while the stopped run winds down re-marks,
-so only a stop after the Play can park again.
+against the new one - but when that value is a run already under way, the run is
+marked there, from the new store, so a stop still to come parks (an agent's lane
+is made when its view opens, usually mid-run, and without this its agent's Stop
+left the lane free to wake it again); and Play pressed while the stopped run
+winds down re-marks, so only a stop after the Play can park again.
 
 Note this is the same `paused` as the play/pause button, and it now holds
 **everything**, scheduled messages included (see `firstSendableIndex`). A due

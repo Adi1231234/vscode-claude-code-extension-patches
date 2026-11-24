@@ -47,14 +47,19 @@
      with a reason does not end the turn and leaves no such row.
      The first value after a switch of conversation (initial) is the new
      store's state, not an edge of a run here: a mark taken in the old
-     conversation must not be read against the new one. */
+     conversation must not be read against the new one. When that state is a
+     run already under way, it is marked from the new store there and then:
+     a stop still to come is this run's. Without it, a queue that started
+     watching mid-run never parked - measured with an agent's lane
+     (queue/lanes.js), made when its view first opens, usually mid-run: Stop
+     on the agent left the lane free to send and wake it again. */
   var runMark = null;
   function watchStopsElsewhere() {
     var S = sessionPush();   /* env-*.js */
     if (watchStopsElsewhere.on || !S || !window.__ccReply) return;
     watchStopsElsewhere.on = 1;
     S.on("busy", function (busy, store, initial) {
-      if (initial) { runMark = null; return; }
+      if (initial) { runMark = busy ? window.__ccReply.mark(store) : null; return; }
       if (busy) { runMark = window.__ccReply.mark(store); return; }
       var r = runMark === null ? null : window.__ccReply.since(runMark, store);
       runMark = null;

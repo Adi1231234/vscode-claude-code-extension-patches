@@ -50,10 +50,23 @@ in place. Read this before changing anything so the structure stays clean.
     a mark is a set of rows (uuid, or the row itself when it has none - a reply
     stopped mid-thought leaves one), never a position, because the store trims
     its list.
+    And `ccTarget.js` (`__ccTarget`): who the message box talks to - the main
+    conversation, or the agent whose view is open (agent-tree sets it,
+    agent-input and the queue's lanes read it); `ccOutbox.js` (`__ccOutbox`):
+    messages to agents through the host, what was sent, and why one did not go;
+    and `ccAgentStore.js` (`__ccAgentStore`): one agent in the shape of a session
+    store (busy, send, interrupt, a stop row on its stop), so the queue runs a
+    lane for it.
     Host runtimes (prepended to `extension.js`, not the webview):
-    `ccProjects.js` (where transcripts live) and `ccTranscript.js`
+    `ccProjects.js` (where transcripts live), `ccTranscript.js`
     (`__ccTranscript`: a session's transcript found by id, and its records of
-    one type read newest first without loading a tens-of-MB file).
+    one type read newest first without loading a tens-of-MB file) and
+    `ccMods.js` (the mods folder on the CLI's spawn, see `Mods.ps1`).
+  - `Mods.ps1` - the Claude Code mods patches ship: `Install-Mod` copies one to
+    `<ext>/patches-mods/<name>`, and `Add-ModsToSpawn` hands that folder to the
+    chat CLI as its one `--plugin-dir` (a folder with no plugin marker of its
+    own loads every child with a `.claude-plugin/plugin.json`). A patch with a
+    mod adds a folder and never edits the spawn itself.
   - `css/` - the shared stylesheets, `Get-LibCssPath`: `ccScroll.css` (the
     scrollbar), `ccModal.css` (the dialog chrome that goes with
     `lib/js/ccModal.js`) and `ccMenu.css` (the menu of `lib/js/ccMenu.js`). Whichever patch runs first appends them; the guard in
@@ -589,6 +602,14 @@ Need another minified name? Detect it once in `Extension.ps1` and add it to `$Ct
   rewrites, its band above the prompt and its status line never appear. Its
   hooks and slash commands do run (`patches/phone-queue` relies on that).
   `patches/input-usage` is the worked example of doing it as a patch instead.
+- **Typing to an agent from the panel: the CLI has the request and refuses it.**
+  `send_task_message` is in every allow list of 2.1.331 and answers
+  `Unsupported control request subtype`; every user frame the panel sends goes
+  to the main agent. So `patches/agent-input` tries it first and falls back to
+  its mod: a host `mcp_call` with `check_permissions` reaches a mod's tool
+  (a plain one only gets the plugin server's "no hook answered"), and
+  `$.session.send` hands the text over - at the agent's next tool round, or
+  waking a finished one. Read its README before changing either end.
 - **The name other sessions see is not the tab title.** `ListAgents` and
   `SendMessage` read the CLI's registry (`~/.claude/sessions/<pid>.json`,
   `name` + `nameSource`); the tab shows the transcript's newest `custom-title`.
