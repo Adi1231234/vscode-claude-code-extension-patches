@@ -33,6 +33,18 @@
 .cc-at-count { padding: 0 8px; border-radius: 8px; line-height: 16px; font-weight: 400; color: var(--app-status-busy); background: color-mix(in srgb, var(--app-status-busy) 14%, transparent); }
 .cc-at-close { display: flex; padding: 4px; border-radius: var(--corner-radius-small); color: var(--app-secondary-foreground); transform: scaleX(-1); }
 .cc-at-close:dir(rtl) { transform: none; }
+/* "Only active agents": a settings row with the app's own switch (32x18
+   track at radius 9, input-border to accent; a 14px thumb moving 2px -> 16px;
+   .15s; no hover of its own - the row carries it). */
+.cc-at .cc-at-filter { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: 0 4px 4px; padding: 4px 8px; border-radius: var(--corner-radius-small); color: var(--app-secondary-foreground); font-size: 11.7px; text-align: start; }
+.cc-at .cc-at-filter:hover { background: var(--app-list-hover-background); }
+.cc-at-filtertext { min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.cc-at-hidden::before { content: " · "; }
+.cc-at-switch { position: relative; flex: 0 0 auto; width: 32px; height: 18px; border-radius: 9px; background: var(--app-input-border); transition: background .15s; }
+.cc-at-thumb { position: absolute; top: 2px; inset-inline-start: 2px; width: 14px; height: 14px; border-radius: 50%; background: var(--app-primary-foreground); transition: inset-inline-start .15s; }
+.cc-at-filter[aria-checked="true"] .cc-at-switch { background: var(--app-accent-color); }
+.cc-at-filter[aria-checked="true"] .cc-at-thumb { inset-inline-start: 16px; }
+@media (prefers-reduced-motion: reduce) { .cc-at-switch, .cc-at-thumb { transition: none; } }
 .cc-at-tree { flex: 1; min-height: 0; overflow-y: auto; padding: 0 4px 8px; }
 .cc-at-head { padding: 12px 8px 4px; color: var(--app-secondary-foreground); font-size: 11.7px; font-weight: 600; }
 
