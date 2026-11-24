@@ -9,17 +9,18 @@ var __ccFoldMenu = (function () {
 
     /* The app's own popups do this (its footer tooltip): a popup that would
        start left of the page is moved to start at its edge. Narrower than the
-       menu's 180px minimum, the page also caps its width. Both are rects, so
-       both are in the body's zoomed units - see the zoom note in CLAUDE.md. */
+       menu's 180px minimum, the page also caps its width. Rects are viewport
+       pixels and a style in the body is the body's, so each is turned into
+       the other as it is written (lib/js/ccPlace.js). */
     function clamp(pop, wrap) {
         var page = document.body.getBoundingClientRect();
         if (pop.getBoundingClientRect().width > page.width) {
             pop.style.minWidth = "0";
-            pop.style.width = page.width + "px";
+            pop.style.width = window.__ccPlace.css(page.width) + "px";
         }
         if (pop.getBoundingClientRect().left < page.left) {
             pop.style.right = "auto";
-            pop.style.left = page.left - wrap.getBoundingClientRect().left + "px";
+            pop.style.left = window.__ccPlace.css(page.left - wrap.getBoundingClientRect().left) + "px";
         }
     }
 

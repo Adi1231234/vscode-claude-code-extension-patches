@@ -65,18 +65,6 @@
     return b;
   }
 
-  /* Anchor under the button, flipped up / pulled in when it would overflow. */
-  function placeMenu(menu, anchor) {
-    var r = anchor.getBoundingClientRect(), w = menu.offsetWidth, h = menu.offsetHeight;
-    var left = r.left;
-    if (left + w > window.innerWidth - 6) left = window.innerWidth - 6 - w;
-    if (left < 6) left = 6;
-    var top = r.bottom + 4;
-    if (top + h > window.innerHeight - 6) top = Math.max(6, r.top - 4 - h);
-    menu.style.left = left + "px";
-    menu.style.top = top + "px";
-  }
-
   function openRowMenu(it, anchor) {
     closeRowMenu();
     var menu = el("div", "__qMenu");
@@ -106,7 +94,9 @@
 
     window.__ccDom.own(menu);   /* body-mounted UI of ours: wakes no observer */
     document.body.appendChild(menu);
-    placeMenu(menu, anchor);
+    /* Under the button, flipped up / pulled in when it would overflow - in
+       the panel's zoom (lib/js/ccPlace.js). */
+    window.__ccPlace.near(menu, anchor, { gap: 4 });
     anchor.classList.add("__qMenuOn");
     document.addEventListener("mousedown", onDoc, true);
     document.addEventListener("keydown", onKey, true);

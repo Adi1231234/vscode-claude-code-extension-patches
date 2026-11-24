@@ -384,8 +384,11 @@ doubled class.
 Two things the popup has to get right:
 
 - It is **body-mounted and `position:fixed`** - the queue body scrolls
-  (`overflow-y:auto`) and would clip an in-flow menu. `placeMenu` anchors it
-  under the button and flips it up / pulls it in at the viewport edges.
+  (`overflow-y:auto`) and would clip an in-flow menu. `lib/js/ccPlace.js`
+  anchors it under the button and flips it up / pulls it in at the viewport
+  edges, in the panel's zoom: written as read, a rect lands `zoom` times too
+  far from the corner, and at zoom 1.2 the menu opened under the message box,
+  out of sight (CLAUDE.md, the zoom bullet).
 - Because it lives outside the panel, `render()` calls `closeRowMenu()` -
   a rebuild would otherwise orphan it. It also closes on outside mousedown,
   `Escape`, scroll (capture, so the queue body counts) and resize.

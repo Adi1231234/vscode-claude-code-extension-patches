@@ -16,7 +16,11 @@ view, or Escape in the box, gives the box back to the main conversation.
   round). **A finished one is woken by it** and carries on; the main
   conversation then hears from it again, as when it first finished.
 - **What you sent is drawn in the agent's view as your message**
-  (`patches/agent-tree/runtime/typed-rows.js`).
+  (`patches/agent-tree/runtime/typed-rows.js`), **from the moment you send
+  it.** Until the agent has read it, it sits at the end of the view a shade
+  dimmer, the way the app draws a message sent while Claude works
+  (`patches/agent-tree/runtime/held-rows.js`); a refusal takes it back, and if
+  the agent is stopped first, the line under the view says it was not read.
 - **Text only.** An attachment is refused and put back with the reason, and so
   is a slash command (it runs in the main conversation). The commands the panel
   runs itself (`/status` and the like) still open as usual.
@@ -69,6 +73,12 @@ view, or Escape in the box, gives the box back to the main conversation.
   agent comes inside the CLI's own words ("The coordinator sent a message
   while you were working: ..."). It is never in the store's live rows, only
   in the agent's transcript, which the CLI writes every 100 ms.
+- **A message is read at the agent's next tool round - or when it finishes.**
+  Measured with a Haiku agent waiting 20 s per step: a message sent during a
+  step reached it 19-25 s later, at the end of that step; one sent while it
+  wrote its last answer (no tool after it) woke it as it finished and was in
+  its transcript 0.4 s later; one sent to a finished agent, 0.3 s. Hence the
+  held row: without it the person looked at nothing for that whole step.
 - **The mods load from one folder.** `lib/Mods.ps1` hands the CLI
   `<ext>/patches-mods` as its one `--plugin-dir`: a folder with no plugin
   marker of its own loads every child that has a manifest. So this mod and
@@ -90,7 +100,7 @@ view, or Escape in the box, gives the box back to the main conversation.
 
 ## Tests
 
-    node patches/agent-input/tests/run-all.mjs   # host delivery, agent store, mods folder
+    node patches/agent-input/tests/run-all.mjs   # host delivery, agent store, outbox, mods folder
 
 Checked for real in `tools/lab` on 2.1.331 with Haiku agents: a message sent
 while the agent ran reached it at its next step and was drawn there, one sent

@@ -31,7 +31,9 @@ in place. Read this before changing anything so the structure stays clean.
     dialog chrome - overlay, head, foot, Esc, backdrop, focus trap) and `ccMenu.js`
     (`window.__ccMenu`, a popup menu in the app's command-menu style, keyboard as
     the WAI-ARIA menu pattern; a dialog passes it keys with `__ccMenu.takeKey`;
-    `created-files` uses it, the queue's older row menu does not yet) - each pulled
+    `created-files` uses it, the queue's older row menu does not yet) and
+    `ccPlace.js` (`window.__ccPlace`, where a box we float goes in the panel's
+    zoom - every menu, tooltip and toast of ours places through it) - each pulled
     into a patch's fragment list with `Get-LibJsPath`. Plus the **webview
     runtime** every patch that watches or ticks is built on (see "The webview
     runtime" under conventions): `ccDom.js` (`__ccDom`, writes only on a real
@@ -259,18 +261,21 @@ Need another minified name? Detect it once in `Extension.ps1` and add it to `$Ct
   `patches/restore-breaker-frames` settles the open without frames when the panel
   is alive; a tab already skipped needs its conversation reopened from history.
 - **The `zoom` patch puts the panel in a second coordinate system.** `patches/zoom`
-  sets `document.body.style.zoom`, and CSS `zoom` deliberately does not scale
-  viewport units. Measured across zoom 1 / 1.25 / 1.34 / 1.5 / 2 at a fixed panel
-  width: `window.innerWidth`, `document.documentElement.clientWidth`,
-  `visualViewport.width` and `vw`/`vh` all keep reporting the **unzoomed** viewport,
-  while `document.body.clientWidth` and every `getBoundingClientRect()` come back
-  at exactly `1/zoom` of it. So any code that subtracts one from the other, or caps
-  a size with `100vw` and positions it from a rect, is off by the zoom factor - and
-  a `position: fixed` box just gets clipped by the viewport, with no ellipsis and no
-  scrollbar. That is `patches/history-dialog-clip` (read its README); the app has 7
-  more `100vw`, 4 `100vh` and 5 JS viewport reads that are exposed the same way.
-  Measure the viewport as `document.body.getBoundingClientRect().width` when the
-  number will meet a rect.
+  sets `document.body.style.zoom`, and the browser then counts in two units.
+  Since Chromium's standardized zoom (measured 2026-11-24 at zoom 1.2):
+  `getBoundingClientRect()`, `innerWidth` / `innerHeight`,
+  `documentElement.clientWidth` and a pointer's `clientX` are **viewport**
+  pixels, while `document.body.clientWidth` and any length written into a style
+  inside the body are **the body's own** pixels, `zoom` of them to a viewport
+  pixel. (An older Chromium had rects at `1/zoom` instead; the first
+  `history-dialog-clip` was measured there.) So a rect written straight into
+  `style.top` / `left` lands `zoom` times too far from the corner: the queue's
+  row menu opened under the message box. Work a position out in rect units and
+  turn it into the body's as you write it - `lib/js/ccPlace.js` (`near` for a
+  fixed box beside an anchor, `css` for any other length) - never by reading
+  the zoom style. A `position: fixed` box that overflows is just clipped, with
+  no ellipsis and no scrollbar; the app has 7 more `100vw`, 4 `100vh` and 5 JS
+  viewport reads exposed the same way.
 - **Injected UI copies the app's design line - measured, never chosen.** Anything
   we add to the panel has to be indistinguishable from what the app draws itself.
   Find the app's own element that plays the same role and take its values off the

@@ -11,6 +11,7 @@
     var C = {
         column: "{{chatContainer}}",
         list: "{{messagesContainer}}",
+        turn: "{{turn}}",
         sticky: "{{stickyMode}}",
         fullEditor: "{{fullEditor}}"
     };
@@ -26,5 +27,12 @@
        draws it. */
     A.listClasses = function () {
         return join([C.list, C.sticky, editor()]);
+    };
+
+    /* A run of rows after the transcript's own, wrapped as the app wraps a
+       turn (runtime/held-rows.js); inside the view's list, so the list's
+       gutters are already there. */
+    A.turnClasses = function () {
+        return C.turn;
     };
 })(window.__ccAT = window.__ccAT || {});

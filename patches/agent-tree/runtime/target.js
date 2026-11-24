@@ -7,11 +7,17 @@
 (function (A) {
     A.talksToAgents = function () { return !!window.__ccAgentInput; };
 
+    /* The agent as the box, its queue lane and the outbox name it: the app's
+       agentId, or its task id when the agent carries none. */
+    A.target = function (agent) {
+        return { agentId: agent.agentId || agent.taskId, taskId: agent.taskId, name: agent.description };
+    };
+
     /* A ref for the agent's view. Memoized per agent, so React calls it when
        the view mounts, when it unmounts and when it moves to another agent -
        never on a plain re-render, which would flap the target. */
     A.useTargetRef = function (K, agent) {
-        var t = { agentId: agent.agentId || agent.taskId, taskId: agent.taskId, name: agent.description };
+        var t = A.target(agent);
         return K.useMemo(function () {
             return function (el) {
                 if (!A.talksToAgents()) return;

@@ -69,7 +69,10 @@ function Invoke-Patch {
         '__PILL__'   = $(if ($Ctx.PillClass) { $Ctx.PillClass } else { 'cc-none' })
         '__SLASH__'  = "menuButton_$($Ctx.FooterHash)"
     }
-    $runtime = (@('cut.js', 'fold.js', 'menu-items.js', 'menu.js', 'more.js') | ForEach-Object { Read-Text (Join-Path $PSScriptRoot "runtime/$_") }) -join "`n"
+    # The menu is placed in the panel's zoom (lib/js/ccPlace.js, shared; the first copy in wins).
+    $files = @((Get-LibJsPath 'ccPlace.js')) +
+        (@('cut.js', 'fold.js', 'menu-items.js', 'menu.js', 'more.js') | ForEach-Object { Join-Path $PSScriptRoot "runtime/$_" })
+    $runtime = ($files | ForEach-Object { Read-Text $_ }) -join "`n"
     Write-Text $Ctx.WebJs ("/* FOOTERFIT */`n" + (Expand-JsTokens $runtime $app) + "`n" + $wc)
     Write-Ok "footer fit ladder + overflow menu (stage: $($g[2].Value).stage, menu css: $($mMenu.Groups[1].Value))"
 
