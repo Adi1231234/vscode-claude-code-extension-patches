@@ -65,7 +65,10 @@
                         h(Asks, { K: K, session: p.session, onBack: p.onBack }, "asks")
                     ]
                 }, "head"),
-                h("div", { className: "cc-at-panebody " + A.listClasses(), children: p.body }, "body")
+                h("div", {
+                    className: "cc-at-panebody " + A.listClasses(),
+                    children: h("div", { className: "cc-at-follow", ref: A.followRef, children: p.body }, p.followKey)
+                }, "body")
             ]
         });
     }
@@ -80,6 +83,7 @@
             K: K,
             session: s,
             aria: "Agent: " + a.description,
+            followKey: "agent:" + a.taskId,
             onBack: p.onBack,
             dot: K.dotState(st),
             title: a.description,
@@ -96,6 +100,7 @@
             K: K,
             session: s,
             aria: "Background task: " + K.taskLabel(t),
+            followKey: "task:" + t.taskId,
             onBack: p.onBack,
             dot: p.running ? "running" : "idle",
             title: K.taskLabel(t),

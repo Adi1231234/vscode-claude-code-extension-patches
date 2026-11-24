@@ -56,6 +56,11 @@ this conversation's agents, each with its background tasks under it.
   app's transcript view sat as a lighter box on the side bar's colour, with its
   dialog's rule and gap on top. The header stays chrome: left to right, like
   the app's own header.
+- **It opens at the newest row and follows the agent** (`runtime/follow.js`),
+  with the rule the app pins its own list by: within 50px of the end it
+  follows, scrolled up it lets go, back at the end it follows again. It reacts
+  to the content growing (a ResizeObserver), not to a timer, and opening
+  another agent starts at the end again.
 - **Picking a background task** shows its live output (the app's own view, for
   shell tasks) with **Stop**.
 

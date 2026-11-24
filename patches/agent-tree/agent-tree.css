@@ -91,6 +91,8 @@
    section only wears that class for its surface. */
 .cc-at-panehead { flex: 0 0 auto; display: flex; flex-direction: column; gap: 4px; padding: 8px 20px 12px; border-block-end: 1px solid var(--app-widget-border); direction: ltr; text-align: start; }
 .cc-at-panebody { min-height: 0; }
+/* What runtime/follow.js watches grow: lays its content out as the list would. */
+.cc-at-follow { flex: 0 0 auto; display: flex; flex-direction: column; }
 /* The app's transcript view opens with a rule and a gap meant for its dialog;
    here the header's own rule is already there. */
 .cc-at-panebody .{{transcript@rows}} { border-top: 0; margin-top: 0; }
