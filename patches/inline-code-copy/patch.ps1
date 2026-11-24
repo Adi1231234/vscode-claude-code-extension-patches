@@ -13,6 +13,7 @@ function Invoke-Patch {
     $parts = @(
         (Join-Path $PSScriptRoot 'code/config.js')
         (Get-LibJsPath 'ccCopyText.js')
+        (Get-LibJsPath 'ccPlace.js')
         (Join-Path $PSScriptRoot 'code/dblclick-copy.js')
     )
     $script = ($parts | ForEach-Object { Read-Text $_ }) -join ''

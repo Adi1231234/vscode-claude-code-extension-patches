@@ -80,6 +80,15 @@ this conversation's agents, each with its background tasks under it.
   after it: the CLI writes the transcript every 100 ms, and a fetch made at the
   event itself read the file without the message
   (`runtime/transcript-session.js`).
+- **...and drawn the moment it is sent.** Until the transcript holds it, a
+  message on its way (`lib/js/ccOutbox.js` waiting) sits at the end of the
+  view, drawn by the app's own row renderer with `held: true` - exactly how the
+  app draws a message sent while Claude works, a shade dimmer (measured in the
+  main chat: text 191 against 237) - in a row of the app's own message class
+  (`runtime/held-rows.js`). Each fetch tells the outbox which box rows it holds:
+  a message is matched to the first row with its text written since it was
+  sent, so an older "?" does not settle a new one; once the agent is stopped,
+  what still waits is dropped and the line under the view says it was not read.
 - **The agent's view looks like the main conversation.** It wears the app's
   own conversation-list classes (`messagesContainer`, `stickyMode`, and
   `fullEditor` exactly when the app uses it), filled in from the bundle's

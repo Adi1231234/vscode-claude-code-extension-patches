@@ -74,7 +74,7 @@
             paneRef: A.useTargetRef(K, a),
             /* Keyed by agent: moving to another agent's view mounts a fresh
                line, with that agent's note - not the one it showed before. */
-            foot: A.talksToAgents() ? h(A.ToAgent, { K: K, running: live, agentId: a.agentId || a.taskId }, "to:" + a.taskId) : null,
+            foot: A.talksToAgents() ? h(A.ToAgent, { K: K, running: live, agentId: A.target(a).agentId }, "to:" + a.taskId) : null,
             aria: "Agent: " + a.description,
             followKey: "agent:" + a.taskId,
             onBack: p.onBack,
@@ -82,7 +82,10 @@
             title: a.description,
             meta: [meta, h("span", { className: "cc-at-time", children: h(K.agentTime, { agent: a }) }, "t")],
             stop: h(StopButton, { K: K, show: live, session: s, taskId: a.taskId, label: "Stop agent" }, "stop:" + a.taskId),
-            body: h(K.transcript, { session: A.transcriptSession(s, a), agent: a, running: live, renderRow: A.ownRenderRow(p.renderRow, a.taskId) }, a.taskId)
+            body: [
+                h(K.transcript, { session: A.transcriptSession(s, a), agent: a, running: live, renderRow: A.ownRenderRow(p.renderRow, a.taskId) }, a.taskId),
+                A.talksToAgents() ? h(A.HeldRows, { K: K, session: s, taskId: a.taskId, renderRow: p.renderRow }, "held:" + a.taskId) : null
+            ]
         });
     };
 

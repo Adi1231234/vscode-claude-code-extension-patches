@@ -53,13 +53,23 @@ the dialog still overhangs the left edge by exactly 6px, because the
 right-aligned to the button. Real, but 6px - the tens of pixels users see come
 from the zoom interaction above.
 
+## The units changed under it (2026-11-24)
+
+Chromium has since moved to standardized CSS zoom, and the two systems swapped
+roles: measured in a real panel at zoom 1.2, `getBoundingClientRect()` and
+`documentElement.clientWidth` are now both viewport pixels, while a length in
+the box's style is the body's own pixels (`lib/js/ccPlace.js` has the
+numbers). The first fix's scale then came out 1, and upstream's mix showed
+again as a box 20% too far from the corner: at a 838px panel its top sat at
+56 instead of 47 and its right edge 9px left of the button.
+
 ## The fix
 
-Read the viewport in the same units as the anchor rect (derive the scale from
-`body.getBoundingClientRect().width` against `documentElement.clientWidth`, so it
-degrades to a no-op when there is no zoom), set the width and max-height from
-those same units, and clamp the offset so the box always keeps a 16px margin on
-both sides. The clamp is what also removes upstream's 6px overhang.
+Turn the anchor rect and the viewport into the body's pixels (dividing by the
+measured scale, `__ccPlace.scale()`, which is 1 when there is no zoom), set the
+width and max-height in those units, and clamp the offset so the box always
+keeps a 16px margin on both sides. The clamp is what also removes upstream's
+6px overhang.
 
 Width and max-height are set inline rather than by overriding the stylesheet, so
 the patch depends on no CSS-module hash and touches a single file.

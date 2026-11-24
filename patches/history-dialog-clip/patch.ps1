@@ -30,6 +30,7 @@ function Invoke-Patch {
             '__VIEW__'  = '${3}'
             '__STYLE__' = '${4}'
         })
-    Write-Text $Ctx.WebJs ([regex]::Replace($wc, $rx, $new))
+    # The box is placed in the panel's zoom (lib/js/ccPlace.js, shared; the first copy in wins).
+    Write-Text $Ctx.WebJs ((Read-Text (Get-LibJsPath 'ccPlace.js')) + "`n" + [regex]::Replace($wc, $rx, $new))
     Write-Ok 'history dialog placed in panel coordinates (no longer clipped under zoom)'
 }

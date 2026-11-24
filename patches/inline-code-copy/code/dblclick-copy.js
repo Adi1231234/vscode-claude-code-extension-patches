@@ -31,24 +31,15 @@
     _toast = null;
   }
 
-  function place(t, node) {
-    var r = node.getBoundingClientRect(), w = t.offsetWidth, h = t.offsetHeight;
-    var left = r.left + (r.width - w) / 2;
-    if (left + w > window.innerWidth - 4) left = window.innerWidth - 4 - w;
-    if (left < 4) left = 4;
-    var top = r.top - h - 6;
-    if (top < 4) top = r.bottom + 6;
-    t.style.left = left + "px";
-    t.style.top = top + "px";
-  }
-
   function toast(node) {
     dropToast();
     var t = document.createElement("div");
     t.className = "__ccCodeToast";
     t.textContent = "Copied";
     document.body.appendChild(t);
-    place(t, node);
+    /* Centred over the code, or under it when there is no room - in the
+       panel's zoom (lib/js/ccPlace.js). */
+    window.__ccPlace.near(t, node, { above: true, center: true, gap: 6, margin: 4 });
     _toast = t;
     _toastT = setTimeout(function () {
       t.classList.add("__ccCodeToastOut");

@@ -12,12 +12,14 @@
     /* One stable ref function, so it runs only when the box mounts or goes. */
     var ref = function (node) { api.el = node; };
 
+    /* Rects are viewport pixels; the tip's style is in the body's, which the
+       panel's zoom makes differ (lib/js/ccPlace.js). */
     function place(anchor, tip) {
         var box = tip && tip.offsetParent;
         if (!box) return null;
-        var a = anchor.getBoundingClientRect(), b = box.getBoundingClientRect();
-        var left = a.right - b.left + 8;
-        return { left: left, top: a.top - b.top + a.height / 2, max: Math.min(320, Math.max(160, b.width - left - 8)) };
+        var a = anchor.getBoundingClientRect(), b = box.getBoundingClientRect(), css = window.__ccPlace.css;
+        var left = css(a.right - b.left) + 8;
+        return { left: left, top: css(a.top - b.top + a.height / 2), max: Math.min(320, Math.max(160, css(b.width) - left - 8)) };
     }
 
     /* Moving from one item to the next shows the next at once, as menus and

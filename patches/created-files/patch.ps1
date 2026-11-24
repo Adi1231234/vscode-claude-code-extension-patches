@@ -42,7 +42,7 @@ function Invoke-Patch {
     # Shared webview runtimes (self-guarded, so re-including is a no-op), then our
     # own, in dependency order: ccStore before ccSession, dom/watch before state,
     # the modal before the dialog.
-    $libs = @('ccStore.js', 'ccDom.js', 'ccWatch.js', 'ccSession.js', 'ccModal.js', 'ccMenu.js', 'ccCopyText.js') |
+    $libs = @('ccStore.js', 'ccDom.js', 'ccWatch.js', 'ccSession.js', 'ccModal.js', 'ccPlace.js', 'ccMenu.js', 'ccCopyText.js') |
         ForEach-Object { Get-LibJsPath $_ }
     $mine = @('icon.js', 'link.js', 'size.js', 'state.js', 'glyphs.js', 'parts.js', 'feedback.js', 'rowMenu.js', 'dirRow.js', 'agents.js', 'rows.js', 'dialog.js') |
         ForEach-Object { Join-Path $PSScriptRoot "runtime/$_" }

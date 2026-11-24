@@ -36,12 +36,12 @@
         return best || text;
     }
 
-    /* A fetched frame, un-marked if it came from the box; seen(text) is told
-       what was typed in it. */
+    /* A fetched frame, un-marked if it came from the box; seen(text, frame)
+       is told what was typed in it. */
     A.unmark = function (f, taskId, seen) {
         if (!f || f.type !== "user" || !fromBox(f.origin)) return f;
         if (typeof f.uuid === "string") typed.add(f.uuid);
-        if (f.message && typeof f.message.content === "string") seen(ownText(f.message.content, taskId));
+        if (f.message && typeof f.message.content === "string") seen(ownText(f.message.content, taskId), f);
         return Object.assign({}, f, { is_meta: false, isMeta: false, isQueuedCommand: false });
     };
 
