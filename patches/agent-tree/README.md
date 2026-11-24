@@ -7,6 +7,9 @@
 The app's **Agent map** dialog becomes a **sidebar beside the chat**: a tree of
 this conversation's agents, each with its background tasks under it.
 
+- **Only once there is something to show.** A conversation that has not started
+  an agent or a background task gets no sidebar and gives up no width. From the
+  first one on it stays, since ended agents stay listed.
 - **Collapsed by default.** A 32px rail with one button and a count of what is
   running. The footer's agents pill and `/agents` open it (they used to open
   the dialog); the arrow at its top folds it back.
