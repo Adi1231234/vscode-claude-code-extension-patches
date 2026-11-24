@@ -89,6 +89,7 @@
                         }, "c")
                     ]
                 }, "top"),
+                h(A.Filter, p, "filter"),
                 h("div", {
                     role: "tree",
                     className: "cc-at-tree",

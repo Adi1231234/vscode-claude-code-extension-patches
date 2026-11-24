@@ -21,6 +21,14 @@ this conversation's agents, each with its background tasks under it.
   agents can be moved between without opening the tree. The footer's agents
   pill and `/agents` open the tree (they used to open the dialog); the arrow at
   its top folds it back.
+- **Active first, and only active by default.** At every level the agents
+  with something running come first: the agent itself runs or waits for a
+  permission, or an agent it spawned or a task it started does
+  (`runtime/arrange.js`). An "Only active agents" switch under the header, on
+  by default, leaves out the agents with nothing running in or under them and
+  says how many it hid; the agent on screen always stays. The rail shows the
+  same agents in the same order. The choice is kept in the panel's
+  localStorage, shared by the window's Claude panels.
 - **The open tree** has a header that says how many agents and tasks are
   running, a 1px indent guide per level (as VS Code draws its own trees), the
   status word in its status colour (Working, Failed, waiting), and a glyph that

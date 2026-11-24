@@ -45,11 +45,16 @@
         }, [agents, tasks, messages]);
         var picked = resolve(selState[0], agents, tasks);
         var back = function () { selState[1](null); };
+        var onlyActive = A.usePref(K, "cc-agent-tree-only-active", true);
+        var shown = A.arrange(K, model.roots, waiting, onlyActive[0],
+            picked && picked.kind === "agent" ? A.keyOf(picked.agent) : null);
         var ctx = {
             K: K,
             session: s,
             waiting: waiting,
             taskCount: tasks.size,
+            onlyActive: onlyActive[0],
+            setOnlyActive: onlyActive[1],
             open: !!p.ccOpen,
             setOpen: p.ccSetOpen,
             sel: picked ? selState[0] : null,
@@ -68,7 +73,8 @@
            background task; ended agents stay in the store, so once it
            appears it stays. `/agents` still opens it on purpose. */
         if (agents.size === 0 && tasks.size === 0 && !ctx.open && !view) return null;
-        var side = K.h(A.Sidebar, { ctx: ctx, model: model }, "side");
+        var drawn = { roots: shown.roots, hidden: shown.hidden, main: model.main, unknown: model.unknown };
+        var side = K.h(A.Sidebar, { ctx: ctx, model: drawn }, "side");
         return [
             side,
             view ? K.h("div", { className: ctx.open ? "cc-at-over cc-at-over-open" : "cc-at-over", children: view }, "over") : null
