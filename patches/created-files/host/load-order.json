@@ -4,6 +4,7 @@
   "git.js",
   "tracked.js",
   "internal.js",
+  "moves.js",
   "replay.js",
   "follow.js",
   "toolPairs.js",

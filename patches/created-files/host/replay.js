@@ -7,7 +7,7 @@
    saved again, so only an event the change journal confirmed counts as creating
    one. Without that a chat that saved ~/.gitconfig "created" it. */
 globalThis.__ccCFReplay = globalThis.__ccCFReplay || (function () {
-    var breathe = globalThis.__ccCFBreathe;
+    var breathe = globalThis.__ccCFBreathe, moveUnder = globalThis.__ccCFMoves.moveUnder;
     var SLICE = 2000, CLOCK_SLACK_MS = 2000;
 
     function parse(line) {
@@ -62,8 +62,16 @@ globalThis.__ccCFReplay = globalThis.__ccCFReplay || (function () {
             if (next > 1024 && next * 2 > deleted.length) { deleted = deleted.slice(next); next = 0; }
         }
 
-        /* Returns the lower-cased path the line was about, or null. */
-        r.apply = function (line) {
+        /* A folder moved (moves.js): its files go along, a file deleted lately
+           too, for the rewrite that may bring it back. */
+        function move(from, to, at, touched) {
+            moveUnder(r.alive, from, to, at, touched);
+            moveUnder(gone, from, to, at, touched).forEach(function (key) { deleted.push([at, key]); });
+        }
+
+        /* Returns the lower-cased path the line was about, or null. A folder move
+           is about every file it took along: those go into `touched`. */
+        r.apply = function (line, touched) {
             var e = parse(line);
             if (!e) return null;
             var t = Date.parse(e.t), at = seconds(t);
@@ -72,6 +80,7 @@ globalThis.__ccCFReplay = globalThis.__ccCFReplay || (function () {
             forget(at);
             if (e.op === "gap") r.gaps++;
             if (e.op === "spawn" && Number.isInteger(e.pid)) r.spawns.set(e.pid, (r.spawns.get(e.pid) || []).concat({ pid: e.pid, t: t, cmd: e.cmd }));
+            if (e.op === "move" && typeof e.from === "string" && typeof e.path === "string") { move(e.from, e.path, at, touched); return null; }
             if (typeof e.path !== "string") return null;
             var key = e.path.toLowerCase(), before = r.alive.get(key);
             var made = before || gone.get(key);   // how the chat made the file, if it did
@@ -107,7 +116,7 @@ globalThis.__ccCFReplay = globalThis.__ccCFReplay || (function () {
         var touched = new Set();
         for (var i = 0; i < lines.length; i++) {
             if (i % SLICE === SLICE - 1) await breathe();
-            var key = r.apply(lines[i]);
+            var key = r.apply(lines[i], touched);
             if (key) touched.add(key);
         }
         return touched;
