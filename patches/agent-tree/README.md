@@ -29,6 +29,18 @@ this conversation's agents, each with its background tasks under it.
   says how many it hid; the agent on screen always stays. The rail shows the
   same agents in the same order. The choice is kept in the panel's
   localStorage, shared by the window's Claude panels.
+- **Tooltips, not the browser's title** (`runtime/tip.js`, `tip-content.js`,
+  `agent-tree-tip.css`). One box for the whole sidebar, opened 8px to the
+  right of what it describes and centred on it, drawn to the app's only hover
+  tooltip (the composer's microphone hint: menu colours, 6px corner, its soft
+  shadow, a .1s fade after .4s; the next item shows at once). An agent's says
+  its name, status line, what it is doing now (the app's progress summary, or
+  its latest tool) and what it was asked; a background task's says how long
+  it has run and the command it runs, read off the tool call that started it;
+  a control's says what pressing it does. It lives in the chat's row, so the
+  sidebar's scrolling never clips it, and it follows the store while it shows.
+  The app's renderer makes enter/leave out of `mouseover`/`mouseout`, which is
+  what a test has to dispatch.
 - **The open tree** has a header that says how many agents and tasks are
   running, a 1px indent guide per level (as VS Code draws its own trees), the
   status word in its status colour (Working, Failed, waiting), and a glyph that

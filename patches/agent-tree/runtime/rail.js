@@ -15,18 +15,17 @@
         var K = p.K, h = K.h, st = p.status;
         var cls = "cc-at-icon" + (st.active ? " cc-at-live" : " cc-at-done") +
             (st.selected ? " cc-at-selected" : "");
-        return h("button", {
+        return h("button", A.tipFor({
             type: "button",
             className: cls,
-            title: p.title,
-            "aria-label": p.title,
+            "aria-label": p.label,
             "aria-current": st.selected ? "true" : undefined,
             onClick: st.select,
             children: [
                 h("span", { className: "cc-at-face", "aria-hidden": "true", children: p.face }, "f"),
                 h(K.dot, { state: st.dot, className: "cc-at-icondot" + (st.active ? " cc-at-pulse" : "") }, "d")
             ]
-        });
+        }, p.tip));
     }
 
     A.Rail = function (p) {
@@ -35,19 +34,18 @@
         var main = A.mainStatus(ctx);
         var icons = A.flatten(p.model.roots).map(function (agent) {
             var st = A.agentStatus(ctx, agent);
-            return h(Icon, { K: K, status: st, face: initial(agent.description), title: st.title }, agent.taskId);
+            return h(Icon, { K: K, status: st, face: initial(agent.description), label: st.title, tip: A.agentTip(ctx, agent) }, agent.taskId);
         });
         return [
-            h("button", {
+            h("button", A.tipFor({
                 type: "button",
                 className: "cc-at-railbtn",
                 "aria-label": "Open the agent tree",
-                title: "Open the agent tree",
                 onClick: function () { ctx.setOpen(true); },
                 children: A.treeIcon(h)
-            }, "open"),
+            }, A.textTip(ctx, "Open the agent tree")), "open"),
             h("span", { className: "cc-at-railsep", "aria-hidden": "true" }, "sep"),
-            h(Icon, { K: K, status: main, face: A.chatIcon(h), title: "Main conversation: " + main.label }, "main")
+            h(Icon, { K: K, status: main, face: A.chatIcon(h), label: "Main conversation: " + main.label, tip: A.mainTip(ctx) }, "main")
         ].concat(icons);
     };
 })(window.__ccAT = window.__ccAT || {});

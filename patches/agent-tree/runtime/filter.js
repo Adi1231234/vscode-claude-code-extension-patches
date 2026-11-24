@@ -6,12 +6,11 @@
 (function (A) {
     A.Filter = function (p) {
         var ctx = p.ctx, h = ctx.K.h, on = ctx.onlyActive, hidden = p.model.hidden;
-        return h("button", {
+        return h("button", A.tipFor({
             type: "button",
             role: "switch",
             "aria-checked": on,
             className: "cc-at-filter",
-            title: on ? "Show the agents that ended too" : "Show only the agents that are running",
             onClick: function () { ctx.setOnlyActive(!on); },
             children: [
                 h("span", {
@@ -27,6 +26,6 @@
                     children: h("span", { className: "cc-at-thumb" })
                 }, "s")
             ]
-        });
+        }, A.textTip(ctx, on ? "Show the agents that ended too" : "Show only the agents that are running")));
     };
 })(window.__ccAT = window.__ccAT || {});

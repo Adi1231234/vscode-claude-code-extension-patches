@@ -22,19 +22,25 @@
         });
     }
 
-    /* Is this tool call still in the list the store keeps? The app's owner
-       lookup answers undefined both for "not there" and, on some releases,
-       for "the main conversation", so the two are told apart here. */
-    A.hasCall = function (messages, id) {
+    /* The tool call with this id, from the list the store keeps, or null once
+       the store has trimmed it. Newest first: a task's call is a recent one. */
+    A.findCall = function (messages, id) {
         for (var i = messages.length - 1; i >= 0; i--) {
             var m = messages[i];
             if (m.type !== "assistant") continue;
             for (var j = 0; j < m.content.length; j++) {
                 var c = m.content[j].content;
-                if (c.type === "tool_use" && c.id === id) return true;
+                if (c.type === "tool_use" && c.id === id) return c;
             }
         }
-        return false;
+        return null;
+    };
+
+    /* Is this tool call still in that list? The app's owner lookup answers
+       undefined both for "not there" and, on some releases, for "the main
+       conversation", so the two are told apart here. */
+    A.hasCall = function (messages, id) {
+        return A.findCall(messages, id) !== null;
     };
 
     function place(K, messages, byCall, task, out) {
