@@ -23,8 +23,18 @@ Ledger location and line contract (shared with the Adi Tools tab, owned by
     %LOCALAPPDATA%\claude-code-patches\created-files\status.json
 
 One JSON object per line: `op` of `new` / `rename` (the file appeared; rename's
-`path` is the final name) / `delete` / `gap` (recording was off across a window,
+`path` is the final name) / `delete` / `move` (a folder renamed or moved: `from`
+is its old path, `path` its new one) / `gap` (recording was off across a window,
 so the list may be incomplete). A reader replays the lines, ignoring case.
+
+A `move` takes every file the reader holds under `from` to the same place under
+`path` (`host/moves.js`), because a folder's files take their new paths with no
+line of their own. Claude Code removes a worktree by renaming it to
+`<name>.removing-<pid>` and deleting that: before the `move` line, every file of a
+removed worktree stayed held under its old name, and one chat's reader looked for
+825,000 files that were gone on every cold read (measured 2026-11-24). The
+recorder's side is in adi-tools' `resources/createdFiles/README.md` ("A moved
+folder").
 
 ## What is listed
 
