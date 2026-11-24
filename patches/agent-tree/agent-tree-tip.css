@@ -1,4 +1,5 @@
-/* AGENTTREETIPCSS - the sidebar's tooltip (runtime/tip.js).
+/* AGENTTREETIPCSS */
+/* The sidebar's tooltip (runtime/tip.js).
    Drawn to the app's only hover tooltip, the composer's microphone hint
    (.micTooltip): --app-menu-background / -foreground / -border, a 6px corner,
    its 0 2px 6px shadow, .85em type, and a .1s fade (tip.js waits the .4s).

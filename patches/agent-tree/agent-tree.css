@@ -1,4 +1,5 @@
-/* AGENTTREECSS - the agent tree sidebar and the view that replaces the chat.
+/* AGENTTREECSS */
+/* The agent tree sidebar and the view that replaces the chat.
    Every gap is from one scale picked by what it separates: 2 a label and its
    meta line, 4 rows of one list and an icon's breathing room, 8 an icon and
    its text and the box padding, 12 one tree level and section breaks. Rows are
