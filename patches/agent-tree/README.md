@@ -10,9 +10,23 @@ this conversation's agents, each with its background tasks under it.
 - **Only once there is something to show.** A conversation that has not started
   an agent or a background task gets no sidebar and gives up no width. From the
   first one on it stays, since ended agents stay listed.
-- **Collapsed by default.** A 32px rail with one button and a count of what is
-  running. The footer's agents pill and `/agents` open it (they used to open
-  the dialog); the arrow at its top folds it back.
+- **Collapsed by default, and still usable collapsed.** A 32px rail: a button
+  that opens the tree, then a tile for the main conversation (a chat glyph) and
+  one per agent in tree order. An agent's tile is the first letter of its
+  description with the app's status dot on its corner (pulsing while it runs,
+  the letter dimmed once it ended), and its tooltip says the status and the
+  full description. The open conversation's tile carries a 2px bar on the
+  rail's edge, the way VS Code's activity bar marks its open view. Clicking a
+  tile switches to that conversation exactly as its tree row does, so the
+  agents can be moved between without opening the tree. The footer's agents
+  pill and `/agents` open the tree (they used to open the dialog); the arrow at
+  its top folds it back.
+- **The open tree** has a header that says how many agents and tasks are
+  running, a 1px indent guide per level (as VS Code draws its own trees), the
+  status word in its status colour (Working, Failed, waiting), and a glyph that
+  tells the main conversation and a background task apart from an agent.
+  Spacing comes from one scale (2 / 4 / 8 / 12), listed at the top of
+  `agent-tree.css`, and was checked by measuring the rendered panel.
 - **A tree.** The main conversation is the root, its agents under it, nested the
   way they spawned each other (the app's own tree builder, the one the dialog
   used). Every row with something under it has a disclosure arrow.
