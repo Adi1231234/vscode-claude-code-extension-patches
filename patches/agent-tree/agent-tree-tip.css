@@ -1,0 +1,20 @@
+/* AGENTTREETIPCSS - the sidebar's tooltip (runtime/tip.js).
+   Drawn to the app's only hover tooltip, the composer's microphone hint
+   (.micTooltip): --app-menu-background / -foreground / -border, a 6px corner,
+   its 0 2px 6px shadow, .85em type, and a .1s fade (tip.js waits the .4s).
+   Placed by tip.js to the right of what it describes, centred on it, inside
+   the chat's row. Our spacing scale inside: 4 between lines, 8 around. */
+.cc-at-tip { position: absolute; z-index: 30; box-sizing: border-box; display: flex; flex-direction: column; gap: 4px; width: max-content; max-width: 320px; padding: 8px 12px; transform: translateY(-50%); background: var(--app-menu-background); color: var(--app-menu-foreground); border: 1px solid var(--app-menu-border); border-radius: var(--corner-radius-medium); box-shadow: 0 2px 6px #00000026; font-size: .85em; line-height: 1.4; direction: ltr; text-align: start; opacity: 0; visibility: hidden; pointer-events: none; transition: opacity .1s ease-in; }
+.cc-at-tip-on { opacity: 1; visibility: visible; }
+@media (prefers-reduced-motion: reduce) { .cc-at-tip { transition: none; } }
+.cc-at-tip-title { display: flex; align-items: center; gap: 8px; font-weight: 600; }
+.cc-at-tip-title > span { overflow-wrap: anywhere; }
+.cc-at-tip-title .cc-at-glyph { flex: 0 0 auto; color: var(--app-secondary-foreground); }
+.cc-at-tip-meta, .cc-at-tip-text { overflow-wrap: anywhere; }
+.cc-at-tip-meta { color: var(--app-secondary-foreground); }
+.cc-at-tip-now { display: flex; gap: 8px; overflow-wrap: anywhere; }
+.cc-at-tip-label { flex: 0 0 auto; color: var(--app-status-busy); font-weight: 600; }
+/* What it was asked, or the command it runs: a recessed block, four lines at
+   most, so a long prompt never turns the tooltip into a page. */
+.cc-at-tip-block { margin-block-start: 4px; padding: 4px 8px; border-radius: var(--corner-radius-small); background: var(--app-code-background); color: var(--app-secondary-foreground); white-space: pre-wrap; overflow-wrap: anywhere; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 4; overflow: hidden; }
+.cc-at-tip-code { font-family: var(--app-monospace-font-family); color: var(--app-primary-foreground); }

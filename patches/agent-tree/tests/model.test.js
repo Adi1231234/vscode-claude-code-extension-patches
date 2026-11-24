@@ -62,6 +62,10 @@ assert.deepStrictEqual(ids(m.unknown), ['t4', 't5', 't6'], 'no call, a trimmed c
 assert.deepStrictEqual(A.flatten(m.roots).map((a) => a.taskId), ['a1', 'a2'], 'the rail lists each agent followed by those it spawned');
 assert.strictEqual(A.keyOf({ taskId: 'x' }), 'x', 'an agent without a call id is keyed by its task id');
 
+// The call itself comes back too (a task's tooltip reads its command off it).
+assert.strictEqual(A.findCall(messages, 'bashInA').id, 'bashInA');
+assert.strictEqual(A.findCall(messages, 'trimmedAway'), null);
+
 // A main call tagged undefined rather than null still counts as main.
 const main2 = [msg('bashMain', undefined)];
 const m2 = A.model(kit(main2), new Map(), new Map([['t1', { taskId: 't1', toolUseId: 'bashMain' }]]), main2);

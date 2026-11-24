@@ -6,14 +6,13 @@
     function Twist(p) {
         var h = p.ctx.K.h;
         if (!p.hasKids) return h("span", { className: "cc-at-twist cc-at-twist-none" });
-        return h("button", {
+        return h("button", A.tipFor({
             type: "button",
             className: "cc-at-twist",
             "aria-label": p.open ? "Collapse" : "Expand",
-            title: p.open ? "Hide what is under it" : "Show what is under it",
             onClick: function () { p.ctx.toggle(p.id); },
             children: A.chevron(h)
-        });
+        }, A.textTip(p.ctx, p.open ? "Hide what is under it" : "Show what is under it")));
     }
 
     /* What leads a row: the app's status dot, or for the main conversation
@@ -29,8 +28,9 @@
     }
 
     /* The generic row. p: ctx, id, depth, open, hasKids, active, selected,
-       dot, glyph (optional), label, meta, title, onSelect, children (the rows
-       under it, drawn in a group whose edge is the tree's indent guide). */
+       dot, glyph (optional), label, meta, tip (tip-content.js), onSelect,
+       children (the rows under it, drawn in a group whose edge is the tree's
+       indent guide). */
     A.Row = function (p) {
         var h = p.ctx.K.h;
         var cls = "cc-at-row" + (p.active ? " cc-at-live" : " cc-at-done") +
@@ -46,17 +46,16 @@
                     className: cls,
                     children: [
                         h(Twist, p, "twist"),
-                        h("button", {
+                        h("button", A.tipFor({
                             type: "button",
                             className: "cc-at-pick",
-                            title: p.title,
                             onClick: p.onSelect,
                             children: [
                                 h(Lead, p, "lead"),
                                 h("span", { className: "cc-at-label", children: p.label }, "l"),
                                 h("span", { className: "cc-at-meta", children: p.meta }, "m")
                             ]
-                        }, "pick")
+                        }, p.tip), "pick")
                     ]
                 }, "row"),
                 p.open && p.hasKids ? h("div", { role: "group", className: "cc-at-group", children: p.children }, "kids") : null
@@ -77,7 +76,7 @@
             glyph: A.terminalIcon(h),
             label: K.taskLabel(t),
             meta: h(K.taskTime, { task: t }),
-            title: "Background task: " + K.taskLabel(t),
+            tip: A.taskTip(p.ctx, t),
             onSelect: function () { p.ctx.select({ kind: "task", id: t.taskId, task: t }); }
         });
     };
@@ -105,7 +104,7 @@
                 h("span", { className: "cc-at-st cc-at-st-" + st.status, children: K.labels[st.status] }, "s"),
                 h("span", { className: "cc-at-time", children: h(K.agentTime, { agent: a }) }, "t")
             ],
-            title: st.title,
+            tip: A.agentTip(ctx, a),
             onSelect: st.select,
             children: kids
         });

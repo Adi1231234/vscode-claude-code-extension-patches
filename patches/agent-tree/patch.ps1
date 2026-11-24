@@ -60,7 +60,7 @@ function Invoke-Patch {
         $out = $out.Substring(0, $e.At) + $e.Text + $out.Substring($e.At + $e.Len)
     }
 
-    $runtime = (@('model.js', 'arrange.js', 'prefs.js', 'status.js', 'app-classes.js', 'follow.js', 'glyphs.js', 'rows.js', 'rail.js', 'filter.js', 'sidebar.js', 'pane.js', 'root.js') |
+    $runtime = (@('model.js', 'arrange.js', 'prefs.js', 'status.js', 'app-classes.js', 'follow.js', 'glyphs.js', 'tip.js', 'tip-content.js', 'rows.js', 'rail.js', 'filter.js', 'sidebar.js', 'pane.js', 'root.js') |
         ForEach-Object { Read-Text (Join-Path $PSScriptRoot "runtime/$_") }) -join "`n"
     # The app's conversation-list classes (runtime/app-classes.js). One that no
     # longer resolves leaves the agent view on its own surface - said, not hidden.
@@ -74,4 +74,5 @@ function Invoke-Patch {
     Write-Ok 'agent tree sidebar in place of the Agent map dialog'
 
     Add-StyleBlock $Ctx (Join-Path $PSScriptRoot 'agent-tree.css') '/* AGENTTREECSS */' 'agent-tree CSS'
+    Add-StyleBlock $Ctx (Join-Path $PSScriptRoot 'agent-tree-tip.css') '/* AGENTTREETIPCSS */' 'agent-tree tooltip CSS'
 }

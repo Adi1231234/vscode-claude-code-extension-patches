@@ -77,7 +77,8 @@
         var side = K.h(A.Sidebar, { ctx: ctx, model: drawn }, "side");
         return [
             side,
-            view ? K.h("div", { className: ctx.open ? "cc-at-over cc-at-over-open" : "cc-at-over", children: view }, "over") : null
+            view ? K.h("div", { className: ctx.open ? "cc-at-over cc-at-over-open" : "cc-at-over", children: view }, "over") : null,
+            K.h(A.Tip, { K: K }, "tip")
         ];
     };
 })(window.__ccAT = window.__ccAT || {});

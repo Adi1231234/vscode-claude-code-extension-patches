@@ -24,7 +24,7 @@
             glyph: A.chatIcon(h),
             label: st.label,
             meta: st.meta,
-            title: "Back to the main conversation",
+            tip: A.mainTip(ctx),
             onSelect: st.select,
             children: kids
         });
@@ -79,14 +79,13 @@
                     className: "cc-at-top",
                     children: [
                         h(Title, p, "t"),
-                        h("button", {
+                        h("button", A.tipFor({
                             type: "button",
                             className: "cc-at-close",
                             "aria-label": "Collapse the agent tree",
-                            title: "Collapse the agent tree",
                             onClick: function () { ctx.setOpen(false); },
                             children: A.chevron(h)
-                        }, "c")
+                        }, A.textTip(ctx, "Collapse the agent tree")), "c")
                     ]
                 }, "top"),
                 h(A.Filter, p, "filter"),
