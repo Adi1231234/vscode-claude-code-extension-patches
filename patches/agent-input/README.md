@@ -16,7 +16,7 @@ view, or Escape in the box, gives the box back to the main conversation.
   round). **A finished one is woken by it** and carries on; the main
   conversation then hears from it again, as when it first finished.
 - **What you sent is drawn in the agent's view as your message**
-  (`patches/agent-tree/runtime/own-rows.js`).
+  (`patches/agent-tree/runtime/typed-rows.js`).
 - **Text only.** An attachment is refused and put back with the reason, and so
   is a slash command (it runs in the main conversation). The commands the panel
   runs itself (`/status` and the like) still open as usual.

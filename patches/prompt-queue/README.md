@@ -35,8 +35,7 @@ run one per conversation (`desktop/patches/prompt-queue/host/engines.js`). In th
 panel, `lanes.js` makes them:
 
 - **The conversation's lane** is the queue as it always was: the panel's store
-  and pushes, and it publishes `__qAuto`, `__qAdd` and `__qRemote` for the other
-  patches. It keeps sending while an agent's view is on screen, through the
+  and pushes, and it publishes `__qAuto` and `__qRemote` for the other patches. It keeps sending while an agent's view is on screen, through the
   store, as a queue with no composer does.
 - **An agent's lane**, made when that agent's view first opens
   (`patches/agent-tree`), while the message box talks to it

@@ -17,8 +17,10 @@
 $MinVersion = [version]'2.1.287'
 
 $C = '([\w$]+)'
-# The chat's submit, the one session.send the panel makes for a typed message.
-$SendRx = "await $C\.send\($C,$C,$C,\{kind:`"human`"\},\{inlinePastes:$C\}\)"
+$N = '[\w$]+'
+# The chat's submit, the one session.send the panel makes for a typed message:
+# the session it sends through (1), and what follows `.send(` (rest).
+$SendRx = "await $C\.send\((?<rest>$N,$N,$N,\{kind:`"human`"\},\{inlinePastes:$N\}\))"
 $SendLit = ',{kind:"human"},{inlinePastes:'
 # The host's request switch, at the app's own request for an agent.
 $CaseRx = "case`"stop_subagent`":return await this\.stopSubagent\($C\.channelId,"
@@ -56,19 +58,17 @@ function Invoke-Patch {
     if ($wc.Contains('/* AGENTINPUT */') -and $js.Contains('/* AGENTINPUTHOST */')) { Write-Skip 'already patched'; return }
     if ($wc.Contains('/* AGENTINPUT */') -or $js.Contains('/* AGENTINPUTHOST */')) { Write-Miss 'only one half is in place - restore the pristine bundles and run again'; return }
 
+    # Nothing is written until the end, so the spawn edit can come first and
+    # the request switch is found in the text it gives back.
+    $js = Add-ModsToSpawn $js
+    if (-not $js) { Write-Miss 'CLI spawn extraArgs anchor not found exactly once'; return }
     $send = Find-AgentInputSite $wc $SendLit $SendRx 'the chat submit send'
     $case = Find-AgentInputSite $js 'case"stop_subagent":' $CaseRx 'the host request switch'
     $runtime = Get-AgentInputRuntime $Ctx
     if (-not $send -or -not $case -or -not $runtime) { return }
-    $js = Add-ModsToSpawn $js
-    if (-not $js) { Write-Miss 'CLI spawn extraArgs anchor not found exactly once'; return }
-    # Add-ModsToSpawn may have put text in front: find the case again.
-    $case = Find-AgentInputSite $js 'case"stop_subagent":' $CaseRx 'the host request switch'
-    if (-not $case) { return }
 
     $call = (Get-InjectedJs (Join-Path $PSScriptRoot 'webview/send-call.js') @{ '__STORE__' = $send.Groups[1].Value }).Trim()
-    $head = 'await ' + $send.Groups[1].Value + '.send('
-    $wc = Set-MatchText $wc $send ($call + $send.Value.Substring($head.Length))
+    $wc = Set-MatchText $wc $send ($call + $send.Groups['rest'].Value)
     $caseJs = (Get-InjectedJs (Join-Path $PSScriptRoot 'host/case.js') @{ '__MSG__' = $case.Groups[1].Value }).Trim()
     $js = Set-MatchText $js $case ($caseJs + $case.Value)
 

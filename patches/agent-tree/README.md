@@ -63,23 +63,23 @@ this conversation's agents, each with its background tasks under it.
   (`patches/agent-input`). The view ends at the top of the box
   (`runtime/inset.js`: a ResizeObserver keeps its bottom on the box's top as
   the box grows - a permission card, a long draft, the queue panel), so the
-  permission cards drawn in the box's place are answered right there; the
-  notice that used to send you back to the conversation for one is gone. A
-  line under the transcript says the box talks to this agent, what it does with
-  a message (read at its next step, or woken by it), and why the last one did
-  not go. `runtime/target.js` tells the box which agent is on screen
-  (`lib/js/ccTarget.js`).
-- **What you sent an agent is drawn in its transcript as your message**
-  (`runtime/own-rows.js`). The app's transcript view has no way to show it: a
-  message reaches the agent as a meta row from "the coordinator", which the
-  view leaves out (or, un-marked, draws as "Sender not recorded"), and it is
-  never in the store's live rows. So the view fetches through a session whose
-  transcript un-marks those rows, and the row renderer draws them as the
-  person's, holding just what was typed (the CLI wraps a message that wakes an
-  agent in words of its own). While a message is not in the view yet, the view
+  permission cards drawn in the box's place are answered right there. A line
+  under the transcript says the box talks to this agent, what it does with a
+  message (read at its next step, or woken by it), and why the last one did
+  not go (`runtime/to-agent.js`). `runtime/target.js` tells the box which
+  agent is on screen (`lib/js/ccTarget.js`).
+- **What you sent an agent is drawn in its transcript as your message.** The
+  app's transcript view has no way to show it: a message reaches the agent as
+  a meta row from "the coordinator", which the view leaves out (or, un-marked,
+  draws as "Sender not recorded"), and it is never in the store's live rows.
+  So the view fetches through a session whose transcript un-marks those rows,
+  and the row renderer draws them as the person's, holding just what was typed
+  - the CLI wraps a message that wakes an agent in words of its own
+  (`runtime/typed-rows.js`). While a message is not in the view yet, the view
   fetches again on each state of the agent and each row it streams, 300 ms
-  after it - the CLI writes the transcript every 100 ms, and a fetch made at
-  the event itself read the file without the message.
+  after it: the CLI writes the transcript every 100 ms, and a fetch made at the
+  event itself read the file without the message
+  (`runtime/transcript-session.js`).
 - **The agent's view looks like the main conversation.** It wears the app's
   own conversation-list classes (`messagesContainer`, `stickyMode`, and
   `fullEditor` exactly when the app uses it), filled in from the bundle's

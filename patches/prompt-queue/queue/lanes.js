@@ -8,7 +8,7 @@
 
    - The conversation's lane is the queue as it always was: its store and
      pushes are the panel's (lib/js/ccStore.js, ccSession.js), it publishes
-     __qAuto / __qAdd / __qRemote for the other patches, and it keeps sending
+     __qAuto and __qRemote for the other patches, and it keeps sending
      while an agent is on screen, through the store, as a queue with no
      composer does.
    - An agent's lane reads the agent's store (lib/js/ccAgentStore.js): busy
@@ -58,13 +58,12 @@
         h = {
             agent: t,
             secondary: true,
-            api: {},
             laneId: function () { return key; },
             store: function () { return storeFor(h); },
             push: function () {
                 return push || (push = window.__ccSessionMake(function (bind) { rebind = bind; bind(storeFor(h)); }));
             },
-            publish: function (name, api) { h.api[name] = api; return api; },
+            publish: function (name, api) { return api; },
             rebind: function () { if (rebind) rebind(storeFor(h)); }
         };
         lanes.set(key, h);
@@ -80,16 +79,16 @@
         if (next !== main) main.engine.pass();
     }
 
-    /* A conversation switch replaces the store; each agent lane follows it,
-       bound only while the panel is back on its own conversation. */
+    /* A conversation switch replaces the store; each agent lane follows it. */
     if (window.__ccSession) window.__ccSession.onStore(function () {
         lanes.forEach(function (h) { h.rebind(); });
     });
 
+    /* Made once per panel; which lane is the conversation's and which one is
+       on screen, for a look from the console. */
     window.__ccQueueLanes = {
         main: function () { return main; },
-        shown: function () { return shown; },
-        count: function () { return lanes.size; }
+        shown: function () { return shown; }
     };
     T.on(show);
     show(T.get());
