@@ -58,8 +58,13 @@ Anything it cannot read keeps the panel's choice, and every decision is logged
 to the extension's output as `[worktree-resume-origin] ...`. The transcript is
 read backwards in 256KB chunks, so a 25MB file costs one or two reads.
 
-- Anchor: `case"launch_claude":await this.launchClaude(<m>.channelId,<m>.resume,<m>.cwd,`
-  (one match on every release checked, 2.1.241 to 2.1.294)
+- Anchor: `case"launch_claude":<between>await this.launchClaude(<m>.channelId,<m>.resume,<m>.cwd,`
+  (one match on every release checked, 2.1.241 to 2.1.331). `<between>` is
+  captured and written back: 2.1.331 put `if(this.tookStartedChat(e))break;`
+  there, which took the anchor dark. That check hands a new chat in the
+  workspace folder to a CLI started ahead of the panel, and declines any launch
+  with `resume` set, so a resumed worktree session still reaches the call this
+  patch rewrites.
 - Test: `node patches/worktree-resume-origin/tests/origin.test.js`
 - Live test, in a real editor: `node tools/lab/lab.mjs up --port 9583`, then
   `node patches/worktree-resume-origin/tests/live/live.mjs --port 9583`. It enters

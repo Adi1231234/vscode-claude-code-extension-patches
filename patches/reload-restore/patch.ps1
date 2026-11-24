@@ -37,8 +37,10 @@ function Invoke-Patch {
         # argument went from `this.disposables` to a local array in 2.1.278, the
         # `let` line between them has gained and lost declarations twice, and in
         # 2.1.327 the listener's arrow got wrapped in a call (`Me((h)=>{...})`),
-        # whose closing paren is optional here.
-        $rx2 = '([\w$]+\?\.fromClient\([\w$]+\)\}\)?,null,[\w$.]+\);)(let [\w$]+=[^;]{0,200};' + $pe + '\.onDidChangeViewState)'
+        # whose closing paren is optional here. In 2.1.331 setupPanel started
+        # returning the view-state listener's statement (`return <pe>.onDid...`),
+        # so the `return` is optional too; it stays on its side of the insertion.
+        $rx2 = '([\w$]+\?\.fromClient\([\w$]+\)\}\)?,null,[\w$.]+\);)(let [\w$]+=[^;]{0,200};(?:return )?' + $pe + '\.onDidChangeViewState)'
         if ($html.Success -and $js -match $rx2) {
             $rec = Get-InjectedJs (Join-Path $PSScriptRoot 'js/blank-iframe-recovery.js') ([ordered]@{
                 '__PE__' = $sig.Groups[1].Value; '__HTML_ARGS__' = $html.Groups[1].Value
