@@ -45,5 +45,9 @@
   "patches/prompt-queue/queue/remote-api.js",
   "patches/prompt-queue/queue/drive.js",
   "patches/prompt-queue/queue/init.js",
-  "patches/prompt-queue/queue/close.js"
+  "patches/prompt-queue/queue/close.js",
+  "lib/js/ccTarget.js",
+  "lib/js/ccAgentStore.js",
+  "patches/prompt-queue/queue/lanes.js",
+  "patches/prompt-queue/queue/end.js"
 ]

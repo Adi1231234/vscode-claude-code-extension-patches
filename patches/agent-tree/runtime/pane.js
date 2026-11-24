@@ -1,8 +1,10 @@
 /* agent-tree: what takes the conversation's place while an agent or a task is
-   picked. It lies over the chat; the chat itself stays mounted underneath, so
-   the main conversation keeps running, keeps its scroll and its draft, and
-   comes back exactly as it was. The body is the app's own "Open transcript"
-   view (or, for a shell task, its own output view). */
+   picked. It lies over the chat's transcript, down to the top of the message
+   box; the chat itself stays mounted underneath, so the main conversation
+   keeps running, keeps its scroll, and comes back exactly as it was. The body
+   is the app's own "Open transcript" view (or, for a shell task, its own
+   output view). While an agent's view is open, the box below talks to that
+   agent (runtime/target.js). */
 (function (A) {
     function StopButton(p) {
         var K = p.K, h = K.h;
@@ -28,26 +30,13 @@
         });
     }
 
-    /* Permission cards live in the chat's composer, which this view covers:
-       say when one is waiting, and take the user to it. */
-    function Asks(p) {
-        var K = p.K, h = K.h;
-        K.track();
-        if (p.session.permissionRequests.value.length === 0) return null;
-        return h("div", {
-            className: "cc-at-asks",
-            role: "status",
-            children: [
-                h(K.dot, { state: "waiting" }, "d"),
-                h("span", { children: "A permission request is waiting in the main conversation." }, "t"),
-                h("button", { type: "button", onClick: p.onBack, children: "Answer it" }, "b")
-            ]
-        });
-    }
-
+    /* The view ends at the top of the message box (runtime/inset.js), so the
+       box and the permission cards drawn in its place stay in reach; foot is
+       what sits between the transcript and the box. */
     function Frame(p) {
         var K = p.K, h = K.h;
         return h("section", {
+            ref: p.paneRef,
             className: "cc-at-pane " + A.columnClasses(),
             "aria-label": p.aria,
             tabIndex: -1,
@@ -61,14 +50,14 @@
                         h("button", { type: "button", className: "cc-at-back", onClick: p.onBack, children: [A.chevron(h), "Main conversation"] }, "b"),
                         h("div", { className: "cc-at-panetitle", children: [h(K.dot, { state: p.dot }, "d"), h("span", { children: p.title }, "t")] }, "t"),
                         h("div", { className: "cc-at-panemeta", children: p.meta }, "m"),
-                        p.stop,
-                        h(Asks, { K: K, session: p.session, onBack: p.onBack }, "asks")
+                        p.stop
                     ]
                 }, "head"),
                 h("div", {
                     className: "cc-at-panebody " + A.listClasses(),
                     children: h("div", { className: "cc-at-follow", ref: A.followRef, children: p.body }, p.followKey)
-                }, "body")
+                }, "body"),
+                p.foot || null
             ]
         });
     }
@@ -82,6 +71,8 @@
         return h(Frame, {
             K: K,
             session: s,
+            paneRef: A.useTargetRef(K, a),
+            foot: A.talksToAgents() ? h(A.ToAgent, { K: K, running: live }, "to") : null,
             aria: "Agent: " + a.description,
             followKey: "agent:" + a.taskId,
             onBack: p.onBack,
@@ -89,7 +80,7 @@
             title: a.description,
             meta: [meta, h("span", { className: "cc-at-time", children: h(K.agentTime, { agent: a }) }, "t")],
             stop: h(StopButton, { K: K, show: live, session: s, taskId: a.taskId, label: "Stop agent" }, "stop:" + a.taskId),
-            body: h(K.transcript, { session: s, agent: a, running: live, renderRow: p.renderRow }, a.taskId)
+            body: h(K.transcript, { session: A.transcriptSession(s, a), agent: a, running: live, renderRow: A.ownRenderRow(p.renderRow, a.taskId) }, a.taskId)
         });
     };
 

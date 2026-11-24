@@ -27,6 +27,31 @@ The add button is re-anchored on every pass (`ensureAddButton`) because the app
 re-renders its own footer; `insertBefore` on the existing node just moves it,
 so it never duplicates.
 
+## Lanes: the conversation's queue, and one per agent (`lanes.js`)
+
+The queue's fragments are the body of a factory, `__ccQueueEngine(host)`, and
+every call is a queue with its own state - the way the desktop app has always
+run one per conversation (`desktop/patches/prompt-queue/host/engines.js`). In the
+panel, `lanes.js` makes them:
+
+- **The conversation's lane** is the queue as it always was: the panel's store
+  and pushes, and it publishes `__qAuto`, `__qAdd` and `__qRemote` for the other
+  patches. It keeps sending while an agent's view is on screen, through the
+  store, as a queue with no composer does.
+- **An agent's lane**, made when that agent's view first opens
+  (`patches/agent-tree`), while the message box talks to it
+  (`patches/agent-input`). It reads the agent's store (`lib/js/ccAgentStore.js`):
+  busy while the agent's run is not over, sent through the extension host, and
+  a stop row whenever the agent is stopped - so it sends one item per run of
+  the agent (waking it when it has finished), parks on its stop like the
+  conversation's does, and holds while the panel is on another conversation.
+  It is saved under `ccq:<conversation id>~agent~<task id>`, restored held, has
+  its own log ring, and publishes nothing. An agent takes text only, so a draft
+  with attachments is not queued there.
+- **Only the lane on screen draws** (`lib/js/ccTarget.js` says which). The one
+  leaving takes its panel and buttons down (`detach.js`); the one arriving
+  looks again.
+
 ## What runs the queue (`drive.js`)
 
 One **pass** does everything the queue needs from the outside world: pick up a

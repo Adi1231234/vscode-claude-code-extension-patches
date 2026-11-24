@@ -65,6 +65,7 @@ $order = @(
     'mcp-self-control'
     'created-files'
     'agent-tree'
+    'agent-input'
 )
 
 # The anchors track the current extension line. An install left far behind (easy to

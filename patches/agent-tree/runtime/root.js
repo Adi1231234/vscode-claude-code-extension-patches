@@ -45,6 +45,8 @@
         }, [agents, tasks, messages]);
         var picked = resolve(selState[0], agents, tasks);
         var back = function () { selState[1](null); };
+        /* Escape in the message box leaves the agent's view (patches/agent-input). */
+        window.__ccTarget.onBack(back);
         var onlyActive = A.usePref(K, "cc-agent-tree-only-active", true);
         var shown = A.arrange(K, model.roots, waiting, onlyActive[0],
             picked && picked.kind === "agent" ? A.keyOf(picked.agent) : null);
@@ -77,7 +79,7 @@
         var side = K.h(A.Sidebar, { ctx: ctx, model: drawn }, "side");
         return [
             side,
-            view ? K.h("div", { className: ctx.open ? "cc-at-over cc-at-over-open" : "cc-at-over", children: view }, "over") : null,
+            view ? K.h("div", { ref: A.insetRef, className: ctx.open ? "cc-at-over cc-at-over-open" : "cc-at-over", children: view }, "over") : null,
             K.h(A.Tip, { K: K }, "tip")
         ];
     };

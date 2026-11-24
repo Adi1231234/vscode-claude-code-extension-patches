@@ -21,6 +21,8 @@
      (activeSessionId is NOT on the composer's ancestor chain, so that is a
      genuine last resort). */
   function getSessionId() {
+    /* A lane with a key of its own: an agent's (queue/lanes.js). */
+    if (typeof host !== "undefined" && host && host.laneId) return host.laneId();
     try {
       var m = (typeof location !== "undefined" && location.href || "").match(/[?&]session=([0-9a-fA-F][0-9a-fA-F-]{7,})/);
       if (m) return m[1];

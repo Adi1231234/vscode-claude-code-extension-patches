@@ -15,7 +15,11 @@
       "desktop/patches/prompt-queue/host/engines.js"
     ],
     "lib/js/ccDom.js": [],
-    "lib/js/ccWatch.js": []
+    "lib/js/ccWatch.js": [],
+    "lib/js/ccTarget.js": [],
+    "lib/js/ccAgentStore.js": [],
+    "patches/prompt-queue/queue/lanes.js": [],
+    "patches/prompt-queue/queue/end.js": []
   },
   "extraStyles": [
     "desktop/patches/prompt-queue/host/tokens.css",

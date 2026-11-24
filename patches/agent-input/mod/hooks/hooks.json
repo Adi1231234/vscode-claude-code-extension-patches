@@ -1,0 +1,4 @@
+{
+  "description": "agent-input hooks module: SendToAgent, called by the extension host",
+  "modules": ["./register.js"]
+}

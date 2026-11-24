@@ -21,6 +21,7 @@ import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
+import { ownRepo, trustEntries } from './folder-trust.mjs';
 
 const EDITOR_SETTINGS = {
     'security.workspace.trust.enabled': false,
@@ -63,13 +64,15 @@ export async function write(lay, port) {
     await writeFile(join(lay.portable, 'argv.json'), argv);
     await writeFile(join(lay.home, '.claude', 'settings.json'), JSON.stringify(CLI_SETTINGS, null, 2));
     await writeFile(join(lay.proj, 'readme.txt'), 'Scratch folder for the patch lab.\n');
+    ownRepo(lay.proj);
     await copyAuth(lay);
 }
 
 /* Signed in, without dragging the real profile along: the credentials plus the
    account/onboarding half of `.claude.json`. `projects` and `mcpServers` are
    dropped - the first is the bulk of that file and every conversation you have
-   ever had, the second would have the lab spawn your MCP servers on startup. */
+   ever had, the second would have the lab spawn your MCP servers on startup.
+   `projects` is then the lab's own folder alone, trusted (folder-trust.mjs). */
 async function copyAuth(lay) {
     const creds = join(homedir(), '.claude', '.credentials.json');
     if (existsSync(creds)) await writeFile(join(lay.home, '.claude', '.credentials.json'), await readFile(creds));
@@ -77,7 +80,7 @@ async function copyAuth(lay) {
     const config = join(homedir(), '.claude.json');
     if (!existsSync(config)) return;
     const parsed = JSON.parse(await readFile(config, 'utf8'));
-    delete parsed.projects;
+    parsed.projects = trustEntries(lay.proj);
     delete parsed.mcpServers;
     await writeFile(join(lay.home, '.claude.json'), JSON.stringify(parsed, null, 2));
 }

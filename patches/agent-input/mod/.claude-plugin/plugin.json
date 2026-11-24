@@ -1,0 +1,6 @@
+{
+  "name": "agent-input",
+  "version": "1.0.0",
+  "description": "Hands a message typed in the editor panel's agent view to that agent (SendToAgent, for the extension host only)",
+  "author": { "name": "Adi Aharoni" }
+}

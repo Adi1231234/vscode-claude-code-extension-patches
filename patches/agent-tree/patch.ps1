@@ -60,8 +60,12 @@ function Invoke-Patch {
         $out = $out.Substring(0, $e.At) + $e.Text + $out.Substring($e.At + $e.Len)
     }
 
-    $runtime = (@('model.js', 'arrange.js', 'prefs.js', 'status.js', 'app-classes.js', 'follow.js', 'glyphs.js', 'tip.js', 'tip-content.js', 'rows.js', 'rail.js', 'filter.js', 'sidebar.js', 'pane.js', 'root.js') |
-        ForEach-Object { Read-Text (Join-Path $PSScriptRoot "runtime/$_") }) -join "`n"
+    # Who the message box talks to (lib/js/ccTarget.js) is shared with
+    # agent-input and prompt-queue; the first copy in wins.
+    $files = @((Get-LibJsPath 'ccTarget.js')) +
+        (@('model.js', 'arrange.js', 'prefs.js', 'status.js', 'app-classes.js', 'follow.js', 'inset.js', 'target.js', 'own-rows.js', 'glyphs.js', 'tip.js', 'tip-content.js', 'rows.js', 'rail.js', 'filter.js', 'sidebar.js', 'pane.js', 'root.js') |
+            ForEach-Object { Join-Path $PSScriptRoot "runtime/$_" })
+    $runtime = ($files | ForEach-Object { Read-Text $_ }) -join "`n"
     # The app's conversation-list classes (runtime/app-classes.js). One that no
     # longer resolves leaves the agent view on its own surface - said, not hidden.
     $classes = Expand-CssClasses $Ctx $runtime
