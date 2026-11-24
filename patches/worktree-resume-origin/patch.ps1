@@ -13,11 +13,15 @@ function Invoke-Patch {
     $js = Read-Text $Ctx.Js
     if ($js.Contains('/* WORKTREERESUMEORIGIN */')) { Write-Skip 'already patched'; return }
 
-    $rx = 'case"launch_claude":await this\.launchClaude\(([\w$]+)\.channelId,\1\.resume,\1\.cwd,'
+    # The two ends of the site: the case label and the launchClaude call. What
+    # lies between is captured and written back as it was - 2.1.331 put
+    # `if(this.tookStartedChat(e))break;` there (a chat started ahead of the
+    # panel, taken only for a new chat in the workspace folder, never a resume).
+    $rx = 'case"launch_claude":((?:[^;{}]{1,120};)?)await this\.launchClaude\(([\w$]+)\.channelId,\2\.resume,\2\.cwd,'
     $n = ([regex]$rx).Matches($js).Count
     if ($n -ne 1) { Write-Miss "launch_claude dispatch anchor matched $n times, expected 1"; return }
 
-    $call = (Get-InjectedJs (Join-Path $PSScriptRoot 'js/launch-call.js') @{ '__M__' = '${1}' }).Trim()
+    $call = (Get-InjectedJs (Join-Path $PSScriptRoot 'js/launch-call.js') ([ordered]@{ '__BETWEEN__' = '${1}'; '__M__' = '${2}' })).Trim()
     $js = [regex]::Replace($js, $rx, $call)
 
     $parts = @((Get-LibJsPath 'ccProjects.js'), (Get-LibJsPath 'ccTranscript.js')) +

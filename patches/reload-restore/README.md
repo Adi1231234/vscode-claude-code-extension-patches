@@ -75,6 +75,11 @@ from 2.1.326 to 2.1.328. What moved:
   change the shared `Add-WebviewMessageHook` anchor got in #153. Checked on
   2.1.319, 322, 323, 325, 326, 327 and 328: the insertion point matches exactly
   once in each, and `apply.ps1` on a pristine 2.1.328 lands every patch.
+- in **2.1.331** setupPanel started returning its view-state statement
+  (`let ...;return <pe>.onDidChangeViewState(...)`), so the anchor allows an
+  optional `return ` there. The recovery still goes in before the `let`, so
+  the returned value is untouched. Checked on 2.1.294, 2.1.330 and 2.1.331:
+  one match each.
 
 Checked against every version in the lab's VSIX cache - **2.1.241, 245, 246, 247,
 250, 252, 258, 278, 280, 287, 292, 294, 295** - the signature, the render call
