@@ -48,7 +48,7 @@
     function Frame(p) {
         var K = p.K, h = K.h;
         return h("section", {
-            className: "cc-at-pane",
+            className: "cc-at-pane " + A.listClasses(false),
             "aria-label": p.aria,
             tabIndex: -1,
             onKeyDown: function (e) {
@@ -65,7 +65,7 @@
                         h(Asks, { K: K, session: p.session, onBack: p.onBack }, "asks")
                     ]
                 }, "head"),
-                h("div", { className: "cc-at-panebody", children: p.body }, "body")
+                h("div", { className: "cc-at-panebody " + A.listClasses(true), children: p.body }, "body")
             ]
         });
     }
