@@ -123,10 +123,16 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 
 async function run(tests) {
   let failed = 0;
+  // The editor's host thread never runs out of work, so the host lets its git worker and timers go
+  // (unref). A test has nothing else: with no panel open, a git call left the loop empty and the run
+  // ended mid-test with exit code 0 and no summary, a pass nobody earned. One timer that never fires
+  // holds the run the way the editor holds the host.
+  const alive = setTimeout(() => {}, 2 ** 31 - 1);
   for (const [name, test] of Object.entries(tests)) {
     try { await test(); console.log('ok   ' + name); }
     catch (e) { failed++; console.log('FAIL ' + name + '\n     ' + e.message); }
   }
+  clearTimeout(alive);
   try { fs.rmSync(root, { recursive: true, force: true }); } catch (e) {}
   console.log(failed ? failed + ' failed' : 'all passed');
   process.exit(failed ? 1 : 0);

@@ -15,6 +15,7 @@
   "agents.js",
   "scratch.js",
   "sources.js",
+  "newRepos.js",
   "files.js",
   "ledger.js",
   "actions.js",
