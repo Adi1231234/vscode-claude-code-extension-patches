@@ -51,7 +51,7 @@ globalThis.__ccCFReplay = globalThis.__ccCFReplay || (function () {
        nothing (2026-11-20). The same as adi-tools' replay.mjs. */
     function create() {
         /* spawns: the tool shells the chat started (the recorder's "spawn" lines), by pid. */
-        var r = { alive: new Map(), gaps: 0, start: Infinity, spawns: new Map() };
+        var r = { alive: new Map(), gaps: 0, start: Infinity, spawns: new Map(), repos: [] };   // repos: the "repo" lines' folders, in order
         var gone = new Map(), deleted = [], next = 0, latest = 0;
 
         function forget(now) {
@@ -80,6 +80,7 @@ globalThis.__ccCFReplay = globalThis.__ccCFReplay || (function () {
             forget(at);
             if (e.op === "gap") r.gaps++;
             if (e.op === "spawn" && Number.isInteger(e.pid)) r.spawns.set(e.pid, (r.spawns.get(e.pid) || []).concat({ pid: e.pid, t: t, cmd: e.cmd }));
+            if (e.op === "repo" && typeof e.dir === "string") r.repos.push(e.dir);   // the chat's git made a repository there
             if (e.op === "move" && typeof e.from === "string" && typeof e.path === "string") { move(e.from, e.path, at, touched); return null; }
             if (typeof e.path !== "string") return null;
             var key = e.path.toLowerCase(), before = r.alive.get(key);

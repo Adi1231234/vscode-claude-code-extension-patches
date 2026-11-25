@@ -111,9 +111,21 @@ globalThis.__ccCFTracked = globalThis.__ccCFTracked || (function () {
         return moved;
     }
 
-    /* Look again at which folders are repositories (one may have been made since):
-       only the paths filtered from now on see it. */
-    function forget() { owners.clear(); }
+    /* Look again at which folders are repositories, under `under` (a recorder `repo`
+       line: the chat's git made one there) or everywhere. A `git init` and a commit
+       over files already listed change no index this filter knew of, so the version
+       moves: what is listed is filtered again. */
+    function forget(under) {
+        if (under === undefined) owners.clear();
+        else {
+            var key = String(under).replace(/[\\/]+$/, "").toLowerCase();
+            Array.from(owners.keys()).forEach(function (dir) {
+                var d = dir.toLowerCase();
+                if (d === key || d.indexOf(key + "\\") === 0) owners.delete(dir);
+            });
+        }
+        moved++;
+    }
 
     return { drop: drop, version: version, forget: forget };
 })();

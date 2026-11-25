@@ -56,6 +56,7 @@ globalThis.__ccCFSources = globalThis.__ccCFSources || (function () {
             get start() { return ledger.replay.start; },
             get gaps() { return ledger.replay.gaps; },
             get spawns() { return ledger.replay.spawns; },
+            get repos() { return ledger.replay.repos; },
             letGo: function (key) {
                 var done = true;
                 all().forEach(function (s) { if (s.replay.alive.has(key)) done = s.replay.letGo(key) && done; });

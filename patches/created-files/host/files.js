@@ -7,7 +7,8 @@
    file: 65,000 of them were 25 s of processor time (measured 2026-11-19), on the
    thread every extension shares. A file deleted outside any chat leaves no line:
    the caller looks at given files again (paths). What git tracks is filtered again
-   over every file only when its answers may have changed (a commit).
+   over every file only when its answers may have changed (a commit, a repository
+   the chat's git made: newRepos.js).
 
    What the chat made is read from `source`: its ledger, or every record of it
    (sources.js), with one followed ledger's read() and replay. */
@@ -16,6 +17,7 @@ globalThis.__ccCFFiles = globalThis.__ccCFFiles || (function () {
     var R = globalThis.__ccCFReplay;
     var I = globalThis.__ccCFInternal;
     var T = globalThis.__ccCFTracked;
+    var NR = globalThis.__ccCFNewRepos;
     var STAT_BATCH = 64;
 
     function newestFirst(a, b) { return a.t === b.t ? 0 : a.t < b.t ? 1 : -1; }
@@ -38,7 +40,7 @@ globalThis.__ccCFFiles = globalThis.__ccCFFiles || (function () {
     }
 
     function chat(source) {
-        var read = false, version = null, queue = Promise.resolve();
+        var read = false, version = null, queue = Promise.resolve(), newRepos = NR.seen();
         /* rows: lower-cased path -> the event that made the file, for each file on
            disk, still the chat's, and not tracked by git: what is listed. (A second
            map of the files looked at always held the same files once a refresh was
@@ -65,6 +67,7 @@ globalThis.__ccCFFiles = globalThis.__ccCFFiles || (function () {
 
         async function refresh(paths, verify, again) {
             var touched = await source.read(again), alive = source.replay.alive;
+            newRepos(source.replay.repos).forEach(function (dir) { T.forget(dir); });   // its version moves (below)
             var keys = touched && read ? touched : startOver(alive);
             read = true;
             paths.forEach(function (p) { keys.add(String(p).toLowerCase()); });

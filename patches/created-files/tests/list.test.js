@@ -1,10 +1,16 @@
 /* What a chat's list may hold.   node patches/created-files/tests/list.test.js */
 const assert = require('assert');
+const { execFileSync } = require('child_process');
 const fs = require('fs');
 const path = require('path');
-const { root, ledgerDir, touch, ledger, events, repo, open, names, run } = require('./harness');
+const { root, ledgerDir, touch, ledger, events, repo, open, names, until, run } = require('./harness');
 
 const listed = async (id) => { const { view, data } = await open(id); view.dispose(); return names(data); };
+/* Makes a folder a repository whose one commit holds every file in it. */
+const commitAll = (name) => {
+  const git = (...a) => execFileSync('git', ['-C', path.join(root, name), '-c', 'user.email=t@t', '-c', 'user.name=t', ...a], { stdio: 'pipe' });
+  git('init', '-q'); git('add', '-A'); git('commit', '-qm', 'all');
+};
 const idOf = (p) => String(fs.statSync(p, { bigint: true }).ino);
 
 run({
@@ -105,6 +111,32 @@ run({
     fs.mkdirSync(path.join(root, 'stray', '.git'), { recursive: true });
     ledger('stray', [touch('stray', 'deep', 'kept.log')]);
     assert.deepStrictEqual(await listed('stray'), ['kept.log']);
+  },
+
+  async 'the recorder\'s repo line takes off the list what the chat\'s git then tracks'() {
+    const [mine, other] = [touch('made-repo', 'src', 'a.txt'), touch('beside', 'b.txt')];
+    ledger('made-repo', [mine, other]);
+    assert.deepStrictEqual(await listed('made-repo'), ['a.txt', 'b.txt']);
+    commitAll('made-repo');
+    fs.appendFileSync(path.join(ledgerDir, 'made-repo.jsonl'),
+      JSON.stringify({ t: '2026-11-19T00:01:00Z', op: 'repo', dir: path.join(root, 'made-repo'), pid: 2, image: 'git.exe' }) + '\r\n');
+    // The panel shows what it held at once, then the tree the new line changed: a.txt gone, its folder
+    // with it, so the one left is a new row, closed. Opened again, every folder is open.
+    const { view, data } = await open('made-repo');
+    const gone = (m) => m.rows.length > 0 && !m.rows.some((r) => r.name === 'a.txt');
+    if (!gone(data)) await until(view, gone);
+    view.dispose();
+    assert.deepStrictEqual(await listed('made-repo'), ['b.txt']);
+  },
+
+  async 'a repo line forgets what the filter knew of its folder only'() {
+    const T = globalThis.__ccCFTracked;
+    const [x, y] = [touch('forgot', 'x.txt'), touch('kept-known', 'y.txt')];
+    assert.deepStrictEqual((await T.drop([x, y])).sort(), [x, y].sort());   // both looked at: neither is in a repository
+    commitAll('forgot');
+    commitAll('kept-known');   // made with no line, so what was known of it stands
+    T.forget(path.join(root, 'forgot'));
+    assert.deepStrictEqual(await T.drop([x, y]), [y]);
   },
 
   async 'a damaged ledger does not break the list'() {

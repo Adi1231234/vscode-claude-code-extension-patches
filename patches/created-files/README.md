@@ -24,8 +24,18 @@ Ledger location and line contract (shared with the Adi Tools tab, owned by
 
 One JSON object per line: `op` of `new` / `rename` (the file appeared; rename's
 `path` is the final name) / `delete` / `move` (a folder renamed or moved: `from`
-is its old path, `path` its new one) / `gap` (recording was off across a window,
-so the list may be incomplete). A reader replays the lines, ignoring case.
+is its old path, `path` its new one) / `repo` (the chat's git made a repository:
+`dir` is its working tree, and the line has no `path`) / `gap` (recording was off
+across a window, so the list may be incomplete). A reader replays the lines,
+ignoring case.
+
+A `repo` line makes the reader forget which folders under `dir` are repositories
+(`host/newRepos.js`, `forget(dir)` in `host/tracked.js`), so the chat's files there
+are filtered again. Before it, a `git init` and a commit over files a chat had
+made changed no index the filter knew of, and the files stayed listed for as long
+as the window ran. A repository made outside any chat (the user's own `git init`)
+writes no line. The recorder's side is in adi-tools' `resources/createdFiles/README.md`
+("A new repository").
 
 A `move` takes every file the reader holds under `from` to the same place under
 `path` (`host/moves.js`), because a folder's files take their new paths with no
@@ -113,8 +123,8 @@ dialog says it is still looking, and Copy all and Delete all wait for it. A file
 deleted outside any chat leaves no line, so the dialog looks again at each file
 the first time it shows it after opening (opening a folder shows more). A panel
 hears from the host only when something it shows changed. What git tracks is
-filtered again over every file only when a
-repository's index changed, so a commit still takes committed files off. Files
+filtered again over every file only when a repository's index changed, or a `repo`
+line came, so a commit still takes committed files off. Files
 are looked at through `original-fs` (`fs.js`): Electron's fs opens any `*.asar`
 as an archive, keeps it open and calls it a folder.
 
