@@ -27,7 +27,8 @@ conversations and opens like any of them.
    and the editor's comms class overrides it with
    `return Boolean(<cfg>("claudeProcessWrapper"))` - true only for someone who
    set `claudeCode.claudeProcessWrapper`. Same code in 2.1.330, 2.1.331 and
-   2.1.332.
+   2.1.332. Older releases (2.1.294) have class fields instead: `=!0` in the
+   base class and a flat `includeProgrammaticSessions=!1` in the editor's.
 
 Measured on 2026-11-28 through each panel's own host channel
 (`connection.value.listSessions("history")`) in a running editor: this repo
@@ -40,14 +41,19 @@ difference.
 
 ## What it does
 
-The editor's override is replaced by the base class's answer:
+The editor's override is replaced by the base class's answer, in whichever
+shape the release has (`js/getter.js`, `js/field.js`):
 
 ```
 get includeProgrammaticSessions(){/* PHONESESSIONSHISTORY */return!0}
+includeProgrammaticSessions=/* PHONESESSIONSHISTORY */!0
 ```
 
-Only the history list reads this getter (`sessionListOptions`); the other
-listers and the lookup by id already include SDK sessions. Nothing in a
+In 2.1.3xx only the history list reads it (`sessionListOptions`); the other
+listers and the lookup by id already include SDK sessions. 2.1.294 also passes
+it to the proactive suggestions, which run only with
+`CLAUDE_PROACTIVE_SUGGESTIONS=true` and then read past sessions the way the
+base class always did. Nothing in a
 transcript tells a phone session apart from any other SDK run (a script using
 the Agent SDK in that folder), so those are listed too. On the machine this was
 measured on there were 9 such transcripts outside Remote Control (6 of them
@@ -56,9 +62,10 @@ under `%TEMP%`) and no `daemon` session at all.
 Relabelling the phone sessions' entrypoint instead (from the tool that starts
 `remote-control`) was rejected: the CLI decides real behaviour on it.
 
-Anchored on the getter's name, the `"claudeProcessWrapper"` literal and the
-shape around them; the settings reader is captured as `[\w$]+`. A reshaped
-getter is a `[miss]` and writes nothing.
+Anchored on the property name, the `"claudeProcessWrapper"` literal and the
+shape around them; the settings reader is captured as `[\w$]+`, and the field
+only matches as a class member (`;` or `{` before it, `;` after). A reshaped
+override is a `[miss]` and writes nothing.
 
 ## Verified
 
@@ -70,6 +77,9 @@ In the lab on 2.1.332, two real phone transcripts copied in unchanged
   window reload: 0;
 - patched again: both, and picking one in Session history rendered its 58
   messages, ready to continue.
+
+`apply.ps1` twice on pristine 2.1.294 and 2.1.332: one site each, both
+bundles parse, no `[miss]` or `[fail]`.
 
 Exposes a single `Invoke-Patch $Ctx` (dot-sourced and called by
 `../../apply.ps1`). Idempotent and fail-safe.
