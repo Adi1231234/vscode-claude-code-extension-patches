@@ -57,6 +57,7 @@ $order = @(
     'footer-fit'
     'history-dialog-clip'
     'panel-restart-button'
+    'session-status'
     'phone-queue'
     'input-usage'
     'message-time'

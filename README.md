@@ -68,7 +68,7 @@ Each feature / bug fix is a **self-contained folder** under `patches/`; the shar
 
 ## ✨ Features
 
-🌐 RTL text · ⌨️ Input RTL · 🔍 Zoom (Ctrl+Scroll) · 📥 Codex-style Prompt Queue · 📋 [Copy icon on your own messages](patches/copy-message) · 🔓 Bypass permission mode · 🗣️ [Subagent text on the stream](patches/subagent-stream-flags) · 🔄 [Restart one panel](patches/panel-restart-button) · 📊 [Usage left, inside the composer](patches/input-usage) · 🕒 [Message times under every row, tool calls too](patches/message-time) · 🌲 [Agent tree sidebar](patches/agent-tree) · 💬 [The message box talks to the agent on screen, queue included](patches/agent-input).
+🌐 RTL text · ⌨️ Input RTL · 🔍 Zoom (Ctrl+Scroll) · 📥 Codex-style Prompt Queue · 📋 [Copy icon on your own messages](patches/copy-message) · 🔓 Bypass permission mode · 🗣️ [Subagent text on the stream](patches/subagent-stream-flags) · 🔄 [Restart one panel](patches/panel-restart-button) · 🟢 [Claude running or stopped, in the header](patches/session-status) · 📊 [Usage left, inside the composer](patches/input-usage) · 🕒 [Message times under every row, tool calls too](patches/message-time) · 🌲 [Agent tree sidebar](patches/agent-tree) · 💬 [The message box talks to the agent on screen, queue included](patches/agent-input).
 
 🔄 **Restart Claude** — an icon in the panel header, next to Session history. It
 reloads **that one panel** and the CLI process behind it, then comes back on the
@@ -76,6 +76,12 @@ same conversation: what `Developer: Reload Window` does to every panel and the
 whole workbench at once, aimed at the single one that is wedged. *Verified in a
 live editor:* the clicked panel got a new document and a new channel, its
 neighbours kept theirs, and the transcript came back intact.
+
+🟢 **Claude running or stopped** - the header's "Learn Claude Code" cap becomes a
+power button: green while the chat's Claude process runs, red when it is down.
+It stops or starts that process behind a confirm dialog, and when the process
+dies the red "process exited with code 1. stderr: ..." banner is gone: the
+dialog shows that error instead.
 
 🌲 **Agent tree** - the Agent map dialog becomes a sidebar beside the chat,
 collapsed by default: the conversation's agents as a tree, running ones plainly
