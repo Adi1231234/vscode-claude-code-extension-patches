@@ -103,8 +103,8 @@ first. Originals are copied to `%TEMP%` unless you pass `-NoBackup`.
 ./patches/worktree-resume-origin/recover-sessions.ps1 -SessionId <uuid>     # move one
 ```
 
-It leaves alone what the panel would not list anyway: sessions started by a
-program (`entrypoint` `sdk-*`) and anything in a worktree the CLI makes and
+It leaves alone sessions started by a program (`entrypoint` `sdk-*`, scripted
+runs rather than conversations) and anything in a worktree the CLI makes and
 removes on its own (`agent-a<hex>`, `wf-`, `bridge-` for Remote Control, `job-`,
 `bg-`). A session that was started inside the worktree has no move records, so
 the cwd of its messages says where it was. On the machine this was found on it
