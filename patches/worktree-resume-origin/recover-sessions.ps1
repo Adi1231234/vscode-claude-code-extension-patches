@@ -82,9 +82,10 @@ foreach ($dir in Get-ChildItem -Path $ProjectsRoot -Directory) {
         $id = $file.BaseName
         if ($SessionId.Count -and $SessionId -notcontains $id) { continue }
         $lines = (Read-Text $file.FullName) -split "`n"
-        # Sessions started by a program (sdk-cli, sdk-ts...) - Remote Control's
-        # bridge runs each one in a bridge-* worktree of its own and removes it
-        # when done - are hidden from the panel's history anyway: leave them.
+        # Sessions started by a program (sdk-cli, sdk-ts...) are scripted runs,
+        # not conversations someone left behind: leave them. Remote Control's
+        # phone sessions are sdk-cli too, but they live in bridge-* worktrees
+        # (skipped above) and patches/phone-sessions-history lists them.
         if ((Get-MessageField $lines 'entrypoint' -First) -like 'sdk-*') { $programmatic++; continue }
         # Where the session is now: the CLI re-writes this record on every flush.
         # A session that was started inside the worktree never moved, so it has

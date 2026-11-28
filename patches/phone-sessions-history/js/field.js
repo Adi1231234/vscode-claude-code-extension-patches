@@ -1,0 +1,1 @@
+includeProgrammaticSessions=/* PHONESESSIONSHISTORY */!0

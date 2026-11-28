@@ -48,6 +48,7 @@ $order = @(
     'worktree-resume-origin'
     'worktree-gone-history'
     'worktree-list-fallback'
+    'phone-sessions-history'
     'session-name-sync'
     'reload-restore'
     'restore-breaker-frames'

@@ -482,6 +482,15 @@ Need another minified name? Detect it once in `Extension.ps1` and add it to `$Ct
   worktrees" and the tab opened an empty chat; `patches/worktree-list-fallback`
   reads the same list from `.git/worktrees/*/gitdir` instead. Never raise the
   timeout for it - that only moves where the same failure happens.
+- **A session started from the phone is an SDK session, and the editor's
+  history hides SDK sessions.** `claude remote-control` runs each phone session
+  as `--print --sdk-url ...`, and the CLI stamps every non-interactive run
+  `"entrypoint":"sdk-cli"`. The history list drops `sdk-cli` / `sdk-ts` /
+  `sdk-py` rows unless asked to include them, and the editor's comms class asks
+  only when `claudeCode.claudeProcessWrapper` is set. Nothing in a transcript
+  tells a phone session from any other SDK run, so `patches/phone-sessions-history`
+  lists them all (9 non-phone ones on the machine it was measured on). Never
+  relabel the entrypoint instead: the CLI gates behaviour on it.
 - **An OS notification has to leave the editor, and only the host can send it.**
   Upstream already has a `show_notification` request the webview calls in a
   dozen places - message, severity, buttons, even an `onlyIfNotVisible` gate -
