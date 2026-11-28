@@ -1,0 +1,93 @@
+/* SESSIONSTATUSCSS */
+/* The status colours are the app's own process-state colours, the ones its
+   MCP server dots wear: connected --app-success-foreground, failed
+   --app-error-foreground, pending --app-warning-foreground. Set on the glyph
+   itself, so the header button's hover (which recolours the button) leaves the
+   state showing. */
+.cc-status-glyph {
+    display: flex;
+}
+
+.cc-status-glyph.cc-status-up,
+.__qHeadIcon.cc-status-up {
+    color: var(--app-success-foreground);
+}
+
+.cc-status-glyph.cc-status-starting,
+.__qHeadIcon.cc-status-starting {
+    color: var(--app-warning-foreground);
+}
+
+.cc-status-glyph.cc-status-down,
+.__qHeadIcon.cc-status-down {
+    color: var(--app-error-foreground);
+}
+
+/* The dialog's medallion, tinted by the state instead of the accent: the same
+   15% wash lib/css/ccModal.css gives the accent. */
+.__qHeadIcon.cc-status-up {
+    background: color-mix(in srgb, var(--app-success-foreground) 15%, transparent);
+}
+
+.__qHeadIcon.cc-status-starting {
+    background: color-mix(in srgb, var(--app-warning-foreground) 15%, transparent);
+}
+
+.__qHeadIcon.cc-status-down {
+    background: color-mix(in srgb, var(--app-error-foreground) 15%, transparent);
+}
+
+.cc-status-dialog [hidden] {
+    display: none;
+}
+
+.cc-status-text,
+.cc-status-warn,
+.cc-status-error-head {
+    margin: 0;
+}
+
+.cc-status-warn {
+    color: var(--app-warning-accent);
+}
+
+.cc-status-error {
+    display: flex;
+    flex-direction: column;
+    gap: var(--app-spacing-small, 4px);
+}
+
+.cc-status-error-head {
+    color: var(--app-error-foreground);
+}
+
+/* What the CLI printed: machine output, so left to right whatever the panel's
+   direction (patches/rtl), in the app's code-block surface and monospace. */
+.cc-status-output {
+    margin: 0;
+    max-height: 160px;
+    overflow: auto;
+    box-sizing: border-box;
+    padding: 4px 8px;
+    direction: ltr;
+    text-align: left;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+    font-family: var(--app-monospace-font-family);
+    font-size: var(--app-monospace-font-size-small);
+    background: var(--app-code-background);
+    border: 1px solid var(--app-widget-border, #2a2b2c);
+    border-radius: var(--corner-radius-small, 4px);
+}
+
+/* The banner's own "View output logs", as a link. */
+.cc-status-logs {
+    align-self: flex-start;
+    padding: 0;
+    border: none;
+    background: none;
+    color: var(--app-link-foreground);
+    font: inherit;
+    text-decoration: underline;
+    cursor: pointer;
+}
